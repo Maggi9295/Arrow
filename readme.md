@@ -25,6 +25,10 @@ Notable Features:
 + Unicode (with RTL, CJK and CTL) Support
 + Continuum Safety
 
+Improvements over original program:
+
++ Avatar Images for Characters
+
 Arrow supports a rich palette of features, from scenes and macros, to variables and characters.
 It also comes with built-in common node types, providing logic, interactive navigation, random data generation,
 state management, and more.
