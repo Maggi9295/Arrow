@@ -298,6 +298,14 @@ const PATH_DIALOG_PROPERTIES = {
 			"access": FileDialog.ACCESS_FILESYSTEM,
 			"filters": []
 		}
+	},
+	"AVATAR_IMAGE" : {
+		"OPEN" : {
+			"title": "Select an Image",
+			"file_mode": FileDialog.FileMode.FILE_MODE_OPEN_FILE,
+			"access": FileDialog.ACCESS_FILESYSTEM,
+			"filters": ["*.png;Image"]
+		}
 	}
 }
 
@@ -330,3 +338,5 @@ const THEMES = {
 }
 
 const UI_TRANSLATIONS_DIR = "res://assets/translations"
+
+const AVATAR_RESOLUTION = 64

@@ -34,6 +34,8 @@ var _KEY_BEING_REVISED = null
 @onready var CharacterRawUid = $/root/Main/FloatingTools/Control/Inspector/Sections/Tabs/Characters/Manager/Editor/Tools/Configs/Uid
 @onready var CharacterEditorName = $/root/Main/FloatingTools/Control/Inspector/Sections/Tabs/Characters/Manager/Editor/Tools/Configs/Name
 @onready var CharacterColorPickerButton = $/root/Main/FloatingTools/Control/Inspector/Sections/Tabs/Characters/Manager/Editor/Tools/Configs/Color
+@onready var CharacterAvatarPickerButton = $/root/Main/FloatingTools/Control/Inspector/Sections/Tabs/Characters/Manager/Editor/Tools/Configs/Avatar
+@onready var PathDialog = $/root/Main/Overlays/Control/PathDialog
 @onready var CharacterEditorSaveButton = $/root/Main/FloatingTools/Control/Inspector/Sections/Tabs/Characters/Manager/Editor/Tools/Configs/Set
 # > Tags
 @onready var TagBox = $/root/Main/FloatingTools/Control/Inspector/Sections/Tabs/Characters/Manager/Editor/Tools/Tags/Initials/Scroll/Pairs
@@ -78,6 +80,7 @@ func register_connections() -> void:
 	FilterReverse.toggled.connect(self._on_listing_instruction_change, CONNECT_DEFERRED)
 	FilterForScene.toggled.connect(self._on_listing_instruction_change, CONNECT_DEFERRED)
 	SortAlphabetical.toggled.connect(self._on_listing_instruction_change, CONNECT_DEFERRED)
+	CharacterAvatarPickerButton.pressed.connect(self._on_avatar_select_button, CONNECT_DEFERRED)
 	pass
 
 func initialize_tab() -> void:
@@ -248,6 +251,18 @@ func load_character_in_editor(character_id:int) -> void:
 	CharacterRawUid.set_deferred("tooltip_text", (RAW_UID_TIP_TEMPLATE % character_id) + tr("TYPE_INSPECTOR_RAW_UID_HINT"))
 	CharacterEditorName.set_text(the_character.name)
 	CharacterColorPickerButton.set("color", Helpers.Utils.rgba_hex_to_color(the_character.color))
+	if the_character.has("avatar") && (the_character.avatar is String):
+		var AvatarImage = Image.new()
+		AvatarImage.load_png_from_buffer(Marshalls.base64_to_raw(the_character.avatar))
+		var AvatarTexture = ImageTexture.create_from_image(AvatarImage)
+		CharacterAvatarPickerButton.set("icon", AvatarTexture)
+	else:
+		var SymbolsImage = Image.load_from_file("res://assets/symbols.png")
+		var SymbolsTexture = ImageTexture.create_from_image(SymbolsImage)
+		var SymbolsAtlas = AtlasTexture.new()
+		SymbolsAtlas.atlas = SymbolsTexture
+		SymbolsAtlas.region = Rect2(Vector2(240, 96), Vector2(48, 48))
+		CharacterAvatarPickerButton.set("icon", SymbolsAtlas)
 	# can't it be removed ? not if it's used by other resources
 	CharacterRemoveButton.set_disabled( (the_character.has("use") && the_character.use.size() > 0) )
 	# ...
@@ -432,6 +447,12 @@ func submit_character_modification() -> void:
 	}
 	var mod_name  = CharacterEditorName.get_text()
 	var mod_color = Helpers.Utils.color_to_rgba_hex(CharacterColorPickerButton.get("color"), false)
+	var AvatarTexture = CharacterAvatarPickerButton.get("icon")
+	# Get Avatar image and encode as base64 to store in character
+	var AvatarImage = AvatarTexture.get_image()
+	var AvatarByteArray = AvatarImage.save_png_to_buffer()
+	var AvatarBase64 = Marshalls.raw_to_base64(AvatarByteArray)
+	var mod_avatar = AvatarBase64
 	if mod_name.length() > 0 && mod_name != the_character_original.name: # name is changed
 		mod_name = Helpers.Utils.exposure_safe_resource_name(mod_name)
 		# force using unique name for characters ?
@@ -441,6 +462,8 @@ func submit_character_modification() -> void:
 			resource_updater.modification["name"] = ( mod_name + Settings.REUSED_CHARACTER_NAMES_AUTO_POSTFIX )
 	if mod_color != the_character_original.color: # emphasis-color value is changed
 		resource_updater.modification["color"] = mod_color
+	if mod_avatar != the_character_original.avatar: # avatar is changed
+		resource_updater.modification["avatar"] = mod_avatar
 	if resource_updater.modification.size() > 0 :
 		self.relay_request_mind.emit("update_resource", resource_updater)
 	pass
@@ -482,3 +505,28 @@ func _on_list_gui_input(event: InputEvent) -> void:
 						if event.is_shift_pressed():
 							self.relay_request_mind.emit("os_clipboard_pull", [null, null]) # (no moving)
 		pass
+
+func _on_avatar_select_button() -> void:
+	prompt_path_to(self, "use_image_as_avatar", [-2], Settings.PATH_DIALOG_PROPERTIES.AVATAR_IMAGE.OPEN)
+	pass
+
+func use_image_as_avatar(file_path:String, into_project_uid:int = -2) -> void: # TODO figure out what second argument is and whether it's needed or not
+	# Get image from file
+	var AvatarImage = Image.load_from_file(file_path)
+	var AvatarHeight = AvatarImage.get_height()
+	var AvatarWidth = AvatarImage.get_width()
+	var ScalingFactor = 1
+	if AvatarHeight > AvatarWidth: # If height is larger than width, scale by limiting to height
+		ScalingFactor = AvatarHeight/Settings.AVATAR_RESOLUTION
+	else: # If width is larger than height, scale by limiting to width
+		ScalingFactor = AvatarWidth/Settings.AVATAR_RESOLUTION
+	AvatarImage.resize(AvatarHeight/ScalingFactor, AvatarWidth/ScalingFactor, 2)
+	
+	# convert to ImageTexture to display in Button
+	var AvatarTexture = ImageTexture.create_from_image(AvatarImage)
+	CharacterAvatarPickerButton.set("icon", AvatarTexture)
+	pass
+
+func prompt_path_to(callback_host:Object, callback_ident:String, extra_arguments:Array, dialog_options:Dictionary) -> void:
+	PathDialog.call_deferred("refresh_prompt_for", callback_host, callback_ident, extra_arguments, dialog_options)
+	pass
