@@ -209,10 +209,22 @@ func dereference_listed_characters(character_id:int) -> void:
 func insert_character_list_item(character_id:int, the_character:Dictionary) -> void:
 	reference_listed_characters(character_id, the_character)
 	# insert the character as list item
-	CharactersList.add_item( the_character.name )
+	CharactersList.add_item( the_character.name )		
 	# we need to keep track of ids in metadata
 	# the item is added last, so...
 	var item_index = (CharactersList.get_item_count() - 1)
+	# if character has avatar avilable, add avatar to list item
+	var AvatarTexture = null
+	if the_character.has("avatar") && (the_character.avatar is String):
+		var AvatarImage = Image.new()
+		AvatarImage.load_png_from_buffer(Marshalls.base64_to_raw(the_character.avatar))
+		AvatarTexture = ImageTexture.create_from_image(AvatarImage)
+		CharactersList.set_item_icon_modulate(item_index, Color(1, 1, 1, 1))
+	else:
+		var AvatarImage = Image.load_from_file("res://assets/default_avatar.png")
+		AvatarTexture = ImageTexture.create_from_image(AvatarImage)
+		CharactersList.set_item_icon_modulate(item_index, Helpers.Utils.rgba_hex_to_color(the_character.color))
+	CharactersList.set_item_icon(item_index, AvatarTexture)
 	CharactersList.set_item_metadata(item_index, character_id)
 	CharactersList.set_item_custom_fg_color(item_index, Helpers.Utils.rgba_hex_to_color(the_character.color))
 	# then select and load it in the character editor
@@ -227,6 +239,19 @@ func update_character_list_item(character_id:int, the_character:Dictionary) -> v
 			# found it, update...
 			CharactersList.set_item_text(idx, the_character.name)
 			CharactersList.set_item_custom_fg_color(idx, Helpers.Utils.rgba_hex_to_color(the_character.color))
+			# if character has avatar avilable, add or update avatar
+			var AvatarTexture = null
+			if the_character.has("avatar") && (the_character.avatar is String):
+				var AvatarImage = Image.new()
+				AvatarImage.load_png_from_buffer(Marshalls.base64_to_raw(the_character.avatar))
+				AvatarTexture = ImageTexture.create_from_image(AvatarImage)
+				CharactersList.set_item_icon_modulate(idx, Color(1, 1, 1, 1))
+			# if not, use default character icon
+			else:
+				var AvatarImage = Image.load_from_file("res://assets/default_avatar.png")
+				AvatarTexture = ImageTexture.create_from_image(AvatarImage)
+				CharactersList.set_item_icon_modulate(idx, Helpers.Utils.rgba_hex_to_color(the_character.color))
+			CharactersList.set_item_icon(idx, AvatarTexture)
 			return
 	printerr("Unexpected Behavior! Trying to update character=%s which is not found in the list!")
 	pass
@@ -263,6 +288,7 @@ func load_character_in_editor(character_id:int) -> void:
 		SymbolsAtlas.atlas = SymbolsTexture
 		SymbolsAtlas.region = Rect2(Vector2(240, 96), Vector2(48, 48))
 		CharacterAvatarPickerButton.set("icon", SymbolsAtlas)
+	CharacterAvatarPickerButton.set_meta("has_new_avatar", false)
 	# can't it be removed ? not if it's used by other resources
 	CharacterRemoveButton.set_disabled( (the_character.has("use") && the_character.use.size() > 0) )
 	# ...
@@ -447,12 +473,15 @@ func submit_character_modification() -> void:
 	}
 	var mod_name  = CharacterEditorName.get_text()
 	var mod_color = Helpers.Utils.color_to_rgba_hex(CharacterColorPickerButton.get("color"), false)
-	var AvatarTexture = CharacterAvatarPickerButton.get("icon")
-	# Get Avatar image and encode as base64 to store in character
-	var AvatarImage = AvatarTexture.get_image()
-	var AvatarByteArray = AvatarImage.save_png_to_buffer()
-	var AvatarBase64 = Marshalls.raw_to_base64(AvatarByteArray)
-	var mod_avatar = AvatarBase64
+	# If new avatar is set, get avatar image and encode as base64 to store in character
+	if CharacterAvatarPickerButton.get_meta("has_new_avatar", false):
+		var AvatarTexture = CharacterAvatarPickerButton.get("icon")
+		var AvatarImage = AvatarTexture.get_image()
+		var AvatarByteArray = AvatarImage.save_png_to_buffer()
+		var AvatarBase64 = Marshalls.raw_to_base64(AvatarByteArray)
+		var mod_avatar = AvatarBase64
+		if mod_avatar != the_character_original.avatar: # avatar is changed
+			resource_updater.modification["avatar"] = mod_avatar
 	if mod_name.length() > 0 && mod_name != the_character_original.name: # name is changed
 		mod_name = Helpers.Utils.exposure_safe_resource_name(mod_name)
 		# force using unique name for characters ?
@@ -462,8 +491,6 @@ func submit_character_modification() -> void:
 			resource_updater.modification["name"] = ( mod_name + Settings.REUSED_CHARACTER_NAMES_AUTO_POSTFIX )
 	if mod_color != the_character_original.color: # emphasis-color value is changed
 		resource_updater.modification["color"] = mod_color
-	if mod_avatar != the_character_original.avatar: # avatar is changed
-		resource_updater.modification["avatar"] = mod_avatar
 	if resource_updater.modification.size() > 0 :
 		self.relay_request_mind.emit("update_resource", resource_updater)
 	pass
@@ -507,26 +534,23 @@ func _on_list_gui_input(event: InputEvent) -> void:
 		pass
 
 func _on_avatar_select_button() -> void:
-	prompt_path_to(self, "use_image_as_avatar", [-2], Settings.PATH_DIALOG_PROPERTIES.AVATAR_IMAGE.OPEN)
+	Main.Mind.prompt_path_to(self, "use_image_as_avatar", [], Settings.PATH_DIALOG_PROPERTIES.AVATAR_IMAGE.OPEN)
 	pass
 
-func use_image_as_avatar(file_path:String, into_project_uid:int = -2) -> void: # TODO figure out what second argument is and whether it's needed or not
+func use_image_as_avatar(file_path:String) -> void:
 	# Get image from file
 	var AvatarImage = Image.load_from_file(file_path)
 	var AvatarHeight = AvatarImage.get_height()
 	var AvatarWidth = AvatarImage.get_width()
 	var ScalingFactor = 1
 	if AvatarHeight > AvatarWidth: # If height is larger than width, scale by limiting to height
-		ScalingFactor = AvatarHeight/Settings.AVATAR_RESOLUTION
-	else: # If width is larger than height, scale by limiting to width
-		ScalingFactor = AvatarWidth/Settings.AVATAR_RESOLUTION
-	AvatarImage.resize(AvatarHeight/ScalingFactor, AvatarWidth/ScalingFactor, 2)
+		ScalingFactor = float(AvatarHeight)/Settings.AVATAR_RESOLUTION
+	else: # If width is larger or equal to than height, scale by limiting to width
+		ScalingFactor = float(AvatarWidth)/Settings.AVATAR_RESOLUTION
+	AvatarImage.resize(AvatarWidth/ScalingFactor, AvatarHeight/ScalingFactor, Image.INTERPOLATE_CUBIC)
 	
 	# convert to ImageTexture to display in Button
 	var AvatarTexture = ImageTexture.create_from_image(AvatarImage)
 	CharacterAvatarPickerButton.set("icon", AvatarTexture)
-	pass
-
-func prompt_path_to(callback_host:Object, callback_ident:String, extra_arguments:Array, dialog_options:Dictionary) -> void:
-	PathDialog.call_deferred("refresh_prompt_for", callback_host, callback_ident, extra_arguments, dialog_options)
+	CharacterAvatarPickerButton.set_meta("has_new_avatar", true)
 	pass

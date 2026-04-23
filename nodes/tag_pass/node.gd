@@ -23,8 +23,8 @@ const METHOD_INVALID = ""
 
 @onready var Method = $Pass/Method
 @onready var CharacterProfile = $Pass/Character
-@onready var CharacterProfileColor = $Pass/Character/Color
-@onready var CharacterProfileName = $Pass/Character/Name
+@onready var CharacterName = $Pass/Character/Name
+@onready var CharacterAvatar = $Pass/Character/Avatar
 @onready var Invalid = $Pass/Invalid
 @onready var TagTemplate = $Pass/Margin/TagTemplate
 @onready var TagBox = $Pass/Margin/Checks
@@ -40,16 +40,20 @@ const METHOD_INVALID = ""
 #	pass
 
 func update_character(profile:Dictionary) -> void:
-	CharacterProfileName.set(
-		"text",
-		profile.name if profile.has("name") && (profile.name is String) else ANONYMOUS_CHARACTER.name
-	)
-	CharacterProfileColor.set(
-		"color",
-		Helpers.Utils.rgba_hex_to_color(
-			profile.color if profile.has("color") && (profile.color is String) else ANONYMOUS_CHARACTER.color
-		)
-	)
+	if profile.has("name") && (profile.name is String):
+		CharacterName.set("text", profile.name)
+	if profile.has("avatar") && (profile.avatar is String):
+		var AvatarImage = Image.new()
+		AvatarImage.load_png_from_buffer(Marshalls.base64_to_raw(profile.avatar))
+		var AvatarTexture = ImageTexture.create_from_image(AvatarImage)
+		CharacterAvatar.set("icon", AvatarTexture) 
+		CharacterAvatar.modulate = Color(1, 1, 1, 1)
+	elif profile.has("color") && (profile.color is String):
+		var AvatarImage = Image.load_from_file("res://assets/default_avatar.png")
+		var AvatarTexture = ImageTexture.create_from_image(AvatarImage)
+		CharacterAvatar.set("icon", AvatarTexture)
+		CharacterAvatar.modulate = Helpers.Utils.rgba_hex_to_color(profile.color)
+	CharacterAvatar.size = Vector2(32,32)
 	pass
 
 func update_tag_box(entities: Array) -> void:

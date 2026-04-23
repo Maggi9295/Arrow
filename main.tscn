@@ -1576,6 +1576,7 @@ expand_icon = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+icon_scale = 0.5
 
 [node name="Editor" type="PanelContainer" parent="FloatingTools/Control/Inspector/Sections/Tabs/Characters/Manager" unique_id=210170199]
 layout_mode = 2
@@ -1603,6 +1604,7 @@ edit_alpha = false
 custom_minimum_size = Vector2(32, 0)
 layout_mode = 2
 icon = SubResource("AtlasTexture_qsp4k")
+icon_alignment = 1
 expand_icon = true
 
 [node name="Name" type="LineEdit" parent="FloatingTools/Control/Inspector/Sections/Tabs/Characters/Manager/Editor/Tools/Configs" unique_id=977761954]

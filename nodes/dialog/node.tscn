@@ -70,10 +70,14 @@ expand_icon = true
 layout_mode = 2
 
 [node name="Avatar" type="Button" parent="Head/Character" unique_id=1425378418]
-custom_minimum_size = Vector2(24, 0)
+custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
+theme_override_colors/icon_disabled_color = Color(1, 1, 1, 1)
 theme_override_styles/disabled = SubResource("StyleBoxFlat_1g41a")
 disabled = true
+flat = true
+icon_alignment = 1
+expand_icon = true
 
 [node name="Name" type="Label" parent="Head/Character" unique_id=780411924]
 layout_mode = 2

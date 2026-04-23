@@ -74,10 +74,13 @@ func update_character(profile:Dictionary) -> void:
 		AvatarImage.load_png_from_buffer(Marshalls.base64_to_raw(profile.avatar))
 		var AvatarTexture = ImageTexture.create_from_image(AvatarImage)
 		CharacterAvatar.set("icon", AvatarTexture) 
-		CharacterAvatar.get_theme_stylebox("disabled").bg_color = Color(1, 1, 1, 0)
+		CharacterAvatar.modulate = Color(1, 1, 1, 1)
 	elif profile.has("color") && (profile.color is String):
-		CharacterAvatar.set("icon", null)
-		CharacterAvatar.get_theme_stylebox("disabled").bg_color = Helpers.Utils.rgba_hex_to_color(profile.color)
+		var AvatarImage = Image.load_from_file("res://assets/default_avatar.png")
+		var AvatarTexture = ImageTexture.create_from_image(AvatarImage)
+		CharacterAvatar.set("icon", AvatarTexture)
+		CharacterAvatar.modulate = Helpers.Utils.rgba_hex_to_color(profile.color)
+	CharacterAvatar.size = Vector2(48,48)
 	pass
 
 func set_character_anonymous() -> void:
