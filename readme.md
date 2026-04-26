@@ -27,7 +27,9 @@ Notable Features:
 
 Improvements over original program:
 
-+ Avatar Images for Characters
++ Avatar images for characters
++ Scene Node which plays a whole scene
++ Exit node to return to previous scene or properly end project
 
 Arrow supports a rich palette of features, from scenes and macros, to variables and characters.
 It also comes with built-in common node types, providing logic, interactive navigation, random data generation,
