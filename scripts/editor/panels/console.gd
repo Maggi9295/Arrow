@@ -25,6 +25,7 @@ const CONSOLE_MESSAGE_PRINT_PROPERTIES = {
 	"autowrap_mode": TextServer.AutowrapMode.AUTOWRAP_WORD_SMART,
 }
 
+var _SCENE_CALL_STACK:Array[Dictionary] = [] # used by scene & exit node to determine which node called current scene
 var _CACHED_TYPES:Dictionary = {}
 var _NODES_IN_TERMINAL = [] # new one first [0]
 var _VARIABLES_SYNCED_WITH_NODES_IN_TERMINAL = []
@@ -399,6 +400,7 @@ func clear_console() -> void:
 	while (all_nodes_count > 0):
 		_NODES_IN_TERMINAL.pop_front().instance.queue_free()
 		all_nodes_count -= 1
+	_SCENE_CALL_STACK.clear()
 	_VARIABLES_SYNCED_WITH_NODES_IN_TERMINAL.clear()
 	_CHARACTERS_SYNCED_WITH_NODES_IN_TERMINAL.clear()
 	_SKIPPED_NODES.clear()
@@ -411,11 +413,14 @@ func clear_console() -> void:
 # because every playing node will finish in a 'play_forward' or a 'status_code'.
 # Some nodes may also ask for clearance (like contents) which can happen only once.
 const POSSIBLE_SIGNALS_FROM_PLAYING_NODES = {
-	"play_forward"   : "request_play_forward",
-	"status_code"    : "interpret_status_code",
-	"clear_up"       : "clear_nodes_before",
-	"reset_variables" : "reset_synced_variables",
+	"play_forward"          : "request_play_forward",
+	"status_code"           : "interpret_status_code",
+	"clear_up"              : "clear_nodes_before",
+	"reset_variables"       : "reset_synced_variables",
 	"reset_characters_tags" : "reset_synced_characters_tags",
+	"push_scene_stack"      : "push_scene_call_stack",
+	"exit_scene"            : "handle_exit_scene",
+	"get_return_node"       : "get_last_scene_call_stack_item",
 }
 
 func listen_to_playing_node(node:Node, node_uid:int = -1) -> void:
@@ -547,6 +552,8 @@ func interpret_status_code(code:int, the_player_node = null, the_player_node_uid
 		caller.name = resource.name if resource is Dictionary && resource.has("name") else "Undefined"
 	# ...
 	match code:
+		CONSOLE_STATUS_CODE.EXIT_END:
+			print_console( tr(CONSOLE_STATUS_CODE.EXIT_END_MESSAGE).format(caller), Settings.CAUTION_COLOR, the_player_node )
 		CONSOLE_STATUS_CODE.END_EDGE:
 			if _OPEN_MACRO != null && the_player_node_uid != _OPEN_MACRO.ID:
 				# It seems like a macro's end of line
@@ -696,6 +703,26 @@ func _on_playing_node_gui_input(event:InputEvent, _node = null, node_uid:int = -
 			if node_uid >= 0 :
 				_request_mind("locate_node_on_grid", { "id": node_uid, "highlight": true } )
 	pass
+
+func push_scene_call_stack(node_id:int, slot_id:int, _the_player_one = null, _the_player_one_uid = null) -> void:
+	_SCENE_CALL_STACK.push_back({
+		"node": node_id,
+		"slot": slot_id
+	})
+	pass
+
+func handle_exit_scene(the_player_one = null, the_player_one_uid = null) -> void:
+	if _SCENE_CALL_STACK.size() > 0:
+		var entry = _SCENE_CALL_STACK.pop_back()
+		request_play_forward(entry.node, entry.slot)
+	else:
+		interpret_status_code(CONSOLE_STATUS_CODE.EXIT_END, the_player_one, the_player_one_uid)
+	pass
+
+func get_last_scene_call_stack_item(_the_player_one = null, _the_player_one_uid = null)  -> Dictionary:
+	if _SCENE_CALL_STACK.size() > 0:
+		return _SCENE_CALL_STACK[-1] # return last element
+	return {}
 
 # make this panel,
 # draggable
