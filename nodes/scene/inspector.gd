@@ -25,10 +25,6 @@ var This = self
 @onready var Scene = $Selector/List
 @onready var Description = $Description
 
-const SUGGESTION_ITEM_TEMPLATE = ( # TODO remove?
-	"{name} - {capitalized_type}" if Settings.FORCE_UNIQUE_NAMES_FOR_NODES else "{name} - {capitalized_type} ({id})"
-)
-
 func _ready() -> void:
 	register_connections()
 	pass
@@ -100,7 +96,6 @@ func _read_parameters() -> Dictionary:
 	var scene_id = Scene.get_selected_id()
 	# Only set if id is valid
 	if scene_id >= 0:
-		# TODO loop check warn_jump_loop()
 		parameters.scene = scene_id
 	else:
 		# ... otherwise leave it as it was
@@ -108,8 +103,6 @@ func _read_parameters() -> Dictionary:
 			parameters.scene = _OPEN_NODE.data.scene
 		else:
 			parameters.scene = -1
-	
-	# TODO recalculate scene hierarchy
 	
 	# now attach `_use` command in case
 	if parameters.scene != _OPEN_NODE.data.scene:

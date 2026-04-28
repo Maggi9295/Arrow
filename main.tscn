@@ -830,9 +830,10 @@ expand_icon = true
 [node name="Tabs" type="TabContainer" parent="FloatingTools/Control/Inspector/Sections" unique_id=1521632529]
 layout_mode = 2
 size_flags_vertical = 3
-current_tab = 0
+current_tab = 2
 
 [node name="Project" type="PanelContainer" parent="FloatingTools/Control/Inspector/Sections/Tabs" unique_id=1639162847]
+visible = false
 layout_mode = 2
 script = ExtResource("13_xkghd")
 metadata/_tab_index = 0
@@ -1140,7 +1141,6 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Scenes" type="PanelContainer" parent="FloatingTools/Control/Inspector/Sections/Tabs" unique_id=791445326]
-visible = false
 layout_mode = 2
 script = ExtResource("17_hvt6o")
 metadata/_tab_index = 2

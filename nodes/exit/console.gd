@@ -60,8 +60,9 @@ func setup_view() -> void:
 	var label = { "scene": tr("EXIT_CONSOLE_INVALID_MSG"), "target_name": "Error", "target_uid": "-1" }
 	if _NODE_RESOURCE.has("name"):
 		label.scene = _NODE_RESOURCE.name
+	# Get Node to return to (should be one node after "scene" node)
 	var return_point = Main.Mind.Console.get_last_scene_call_stack_item()
-	if return_point.has("node") && (return_point.node is int) && return_point.node >= 0: # TODO get scene instead of node
+	if return_point.has("node") && (return_point.node is int) && return_point.node >= 0:
 		var target_scene_id = Main.Mind.find_scene_owner_of_node(return_point.node)
 		if target_scene_id >= 0:
 			label.target_uid = target_scene_id
