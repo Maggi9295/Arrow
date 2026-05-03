@@ -147,7 +147,7 @@ func insert_scene_list_item(scene_id:int, the_scene:Dictionary) -> void:
 	# the item is added last, so...
 	var item_index = (ScenesList.get_item_count() - 1)
 	ScenesList.set_item_metadata(item_index, scene_id)
-	if the_scene.has("color") && (the_scene.thumbnail is String):
+	if the_scene.has("color") && (the_scene.color is String):
 		ScenesList.set_item_custom_fg_color(item_index, Helpers.Utils.rgba_hex_to_color(the_scene.color))
 	else:
 		ScenesList.set_item_custom_fg_color(item_index, Color(1, 1, 1, 1))
@@ -159,7 +159,7 @@ func insert_scene_list_item(scene_id:int, the_scene:Dictionary) -> void:
 		ThumbnailTexture = ImageTexture.create_from_image(ThumbnailImage)
 		ScenesList.set_item_icon_modulate(item_index, Color(1, 1, 1, 1))
 	# if not, use default scene icon
-	elif the_scene.has("color") && (the_scene.thumbnail is String):
+	elif the_scene.has("color") && (the_scene.color is String):
 		ScenesList.set_item_icon_modulate(item_index, Helpers.Utils.rgba_hex_to_color(the_scene.color))
 	else:
 		ScenesList.set_item_icon_modulate(item_index, Color(1, 1, 1, 1))
@@ -172,7 +172,7 @@ func update_scene_list_item(scene_id:int, the_scene:Dictionary) -> void:
 		if ScenesList.get_item_metadata(idx) == scene_id:
 			# found it, update...
 			ScenesList.set_item_text(idx, the_scene.name)
-			if the_scene.has("color") && (the_scene.thumbnail is String):
+			if the_scene.has("color") && (the_scene.color is String):
 				ScenesList.set_item_custom_fg_color(idx, Helpers.Utils.rgba_hex_to_color(the_scene.color))
 			else:
 				ScenesList.set_item_custom_fg_color(idx, Color(1, 1, 1, 1))
@@ -184,7 +184,7 @@ func update_scene_list_item(scene_id:int, the_scene:Dictionary) -> void:
 				ThumbnailTexture = ImageTexture.create_from_image(ThumbnailImage)
 				ScenesList.set_item_icon_modulate(idx, Color(1, 1, 1, 1))
 			# if not, use scene character icon
-			elif the_scene.has("color") && (the_scene.thumbnail is String):
+			elif the_scene.has("color") && (the_scene.color is String):
 				ScenesList.set_item_icon_modulate(idx, Helpers.Utils.rgba_hex_to_color(the_scene.color))
 			else:
 				ScenesList.set_item_icon_modulate(idx, Color(1, 1, 1, 1))
@@ -339,7 +339,7 @@ func update_scene_editorial_state(scene_id:int = -1) -> void:
 		var the_scene = _LISTED_SCENES_BY_ID[scene_id]
 		SceneRawUid.set_deferred("tooltip_text", (RAW_UID_TIP_TEMPLATE % scene_id) + tr("TYPE_INSPECTOR_RAW_UID_HINT"))
 		SceneEditorName.set_text(the_scene.name)
-		if the_scene.has("color") && (the_scene.thumbnail is String):
+		if the_scene.has("color") && (the_scene.color is String):
 			SceneColorPickerButton.set("color", Helpers.Utils.rgba_hex_to_color(the_scene.color))
 		else:
 			SceneColorPickerButton.set("color", Color(1, 1, 1, 1))

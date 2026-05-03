@@ -174,9 +174,11 @@ class UiManager :
 			var as_node = PANELS[panel]
 			@warning_ignore("INCOMPATIBLE_TERNARY")
 			var is_open = is_panel_open(panel) if PANELS_OPEN_BY_DEFAULT.has(panel) else null
+			# Save Panel position in relation to viewport size
+			var viewport_size = Main.get_viewport_rect().size
 			stateful[panel] = {
-				"size": as_node.get_size(),
-				"position": as_node.get_position(),
+				"size": as_node.get_size() / viewport_size,
+				"position": as_node.get_position() / viewport_size,
 				"open": is_open,
 			}
 		return stateful
@@ -197,11 +199,15 @@ class UiManager :
 			_PANELS_TRACKED = tracked
 		if _WINDOW_RESTORED && _PANELS_TRACKED.size() > 0:
 			print_debug("restoring panels state: ", _PANELS_TRACKED)
+			# Restore panels in relation to viewport size
+			var viewport_size = Main.get_viewport_rect().size
 			for panel in _PANELS_TRACKED:
 				var as_node = PANELS[panel]
 				var state = _PANELS_TRACKED[panel]
-				as_node.call_deferred("_set_size", state.size)
-				as_node.call_deferred("_set_position", state.position)
+				if state.has("size") && state.size.x < 1 && state.size.x > 0 && state.size.y < 1 && state.size.y > 0:
+					as_node.call_deferred("_set_size", state.size * viewport_size)
+				if state.has("position") && state.position.x < 1 && state.position.x > 0 && state.position.y < 1 && state.position.y > 0:
+					as_node.call_deferred("_set_position", state.position * viewport_size)
 				if state.open is bool:
 					self.call_deferred("set_panel_visibility", panel, state.open)
 			_PANELS_TRACKED = {}
