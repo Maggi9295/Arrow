@@ -351,6 +351,35 @@ text = "Theme"
 [node name="Options" type="OptionButton" parent="Overlays/Control/Preferences/Margin/Sections/Configs/Scroll/Params/Theme/Selector" unique_id=1807735089]
 layout_mode = 2
 
+[node name="Scaling" type="PanelContainer" parent="Overlays/Control/Preferences/Margin/Sections/Configs/Scroll/Params" unique_id=181868958]
+layout_mode = 2
+
+[node name="Selector" type="VBoxContainer" parent="Overlays/Control/Preferences/Margin/Sections/Configs/Scroll/Params/Scaling" unique_id=1036961094]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Overlays/Control/Preferences/Margin/Sections/Configs/Scroll/Params/Scaling/Selector" unique_id=997256678]
+layout_mode = 2
+text = "Scaling"
+
+[node name="Slider" type="HBoxContainer" parent="Overlays/Control/Preferences/Margin/Sections/Configs/Scroll/Params/Scaling/Selector" unique_id=803754070]
+layout_mode = 2
+
+[node name="Slider" type="HSlider" parent="Overlays/Control/Preferences/Margin/Sections/Configs/Scroll/Params/Scaling/Selector/Slider" unique_id=707424180]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.5
+max_value = 4.0
+step = 0.1
+value = 1.0
+
+[node name="Value" type="Label" parent="Overlays/Control/Preferences/Margin/Sections/Configs/Scroll/Params/Scaling/Selector/Slider" unique_id=517371135]
+custom_minimum_size = Vector2(48, 0)
+layout_mode = 2
+text = "×1.0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="Language" type="PanelContainer" parent="Overlays/Control/Preferences/Margin/Sections/Configs/Scroll/Params" unique_id=275335827]
 layout_mode = 2
 
@@ -2116,7 +2145,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-scroll_offset = Vector2(0, -5)
 snapping_distance = 5
 right_disconnects = true
 zoom_min = 0.1

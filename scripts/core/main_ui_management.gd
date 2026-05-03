@@ -163,6 +163,10 @@ class UiManager :
 	func reset_language(by_locale:String = "en") -> String:
 		PANELS.preferences.reset_language(by_locale)
 		return by_locale
+		
+	func change_ui_scaling(scaling_factor:float) -> void:
+		Main.get_window().content_scale_factor = scaling_factor
+		pass
 	
 	func read_panels_state() -> Dictionary:
 		var stateful: Dictionary = {}
@@ -235,9 +239,11 @@ class UiManager :
 			var cfg = configuration[config]
 			match config:
 				"appearance_theme":
-					reset_theme( cfg )
+					reset_theme(cfg)
 				"language":
-					reset_language( cfg )
+					reset_language(cfg)
+				"ui_scaling":
+					change_ui_scaling(cfg)
 				"window":
 					if cfg is Dictionary:
 						restore_window(cfg)

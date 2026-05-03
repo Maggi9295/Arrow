@@ -27,6 +27,7 @@ Notable Features:
 
 Improvements over original program:
 
++ Slider for UI scaling (allows for larger UI on HiDPI monitors)
 + Avatar images for characters
 + Scenes now have a color and thumbnail image
 + Scene Node which plays a whole scene
