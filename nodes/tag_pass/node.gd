@@ -49,8 +49,7 @@ func update_character(profile:Dictionary) -> void:
 		CharacterAvatar.set("icon", AvatarTexture) 
 		CharacterAvatar.modulate = Color(1, 1, 1, 1)
 	elif profile.has("color") && (profile.color is String):
-		var AvatarImage = Image.load_from_file("res://assets/default_avatar.png")
-		var AvatarTexture = ImageTexture.create_from_image(AvatarImage)
+		var AvatarTexture = load("res://assets/default_avatar.png")
 		CharacterAvatar.set("icon", AvatarTexture)
 		CharacterAvatar.modulate = Helpers.Utils.rgba_hex_to_color(profile.color)
 	CharacterAvatar.size = Vector2(32,32)

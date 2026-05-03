@@ -12,7 +12,8 @@ extends GraphNode
 
 var This = self
 
-@onready var Destination = $Display/Destination
+@onready var DestinationName = $Display/Destination/Name
+@onready var DestinationThumbnail = $Display/Destination/Thumbnail
 @onready var Description = $Display/Description
 
 const DESTINATION_FORMAT_STRING = (
@@ -36,8 +37,10 @@ func _gui_input(event) -> void:
 			if event.is_alt_pressed() == true:
 				if _node_resource.has("data"):
 					var data = _node_resource.data
-					if data.has("target") && (data.target is int) && data.target >= 0:
-						Main.Mind.call_deferred("locate_node_on_grid", data.target)
+					if data.has("scene") && (data.scene is int) && data.scene >= 0:
+						var the_scene = Main.Mind.lookup_resource(data.scene, "scenes")
+						if the_scene.has("entry"):
+							Main.Mind.call_deferred("locate_node_on_grid", the_scene.entry) # TODO fix bug where program crasheswhen persuing this chain of events, crash happens in function resize_to_best_fit()
 	pass
 
 func _update_node(data:Dictionary) -> void:
@@ -45,9 +48,24 @@ func _update_node(data:Dictionary) -> void:
 	if data.has("scene") && (data.scene is int) && data.scene >= 0:
 		destination.target_uid = data.scene
 		var target_scene = Main.Mind.lookup_resource(data.scene, "scenes")
-		if (target_scene is Dictionary) && target_scene.has("name") && (target_scene.name is String):
-			destination.target_name = target_scene.name
-	Destination.set_deferred("text", DESTINATION_FORMAT_STRING.format(destination))
+		if (target_scene is Dictionary):
+			if target_scene.has("name") && (target_scene.name is String):
+				destination.target_name = target_scene.name
+			if target_scene.has("thumbnail") && (target_scene.thumbnail is String):
+				var ThumbnailImage = Image.new()
+				ThumbnailImage.load_png_from_buffer(Marshalls.base64_to_raw(target_scene.thumbnail))
+				var ThumbnailTexture = ImageTexture.create_from_image(ThumbnailImage)
+				DestinationThumbnail.set("icon", ThumbnailTexture)
+				DestinationThumbnail.modulate = Color(1, 1, 1, 1)
+			elif target_scene.has("color") && (target_scene.color is String):
+				var ThumbnailTexture = load("res://assets/default_thumbnail.png")
+				DestinationThumbnail.set("icon", ThumbnailTexture)
+				DestinationThumbnail.modulate = Helpers.Utils.rgba_hex_to_color(target_scene.color)
+			else:
+				var ThumbnailTexture = load("res://assets/default_thumbnail.png")
+				DestinationThumbnail.set("icon", ThumbnailTexture)
+				DestinationThumbnail.modulate = Color(1, 1, 1, 1)
+	DestinationName.set_deferred("text", DESTINATION_FORMAT_STRING.format(destination))
 	if data.has("description") && (data.description is String) && data.description.length() > 0:
 		Description.set_deferred("text", data.description)
 		Description.set_deferred("visible", true)

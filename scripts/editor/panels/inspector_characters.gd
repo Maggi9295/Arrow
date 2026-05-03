@@ -221,8 +221,7 @@ func insert_character_list_item(character_id:int, the_character:Dictionary) -> v
 		AvatarTexture = ImageTexture.create_from_image(AvatarImage)
 		CharactersList.set_item_icon_modulate(item_index, Color(1, 1, 1, 1))
 	else:
-		var AvatarImage = Image.load_from_file("res://assets/default_avatar.png")
-		AvatarTexture = ImageTexture.create_from_image(AvatarImage)
+		AvatarTexture = load("res://assets/default_avatar.png")
 		CharactersList.set_item_icon_modulate(item_index, Helpers.Utils.rgba_hex_to_color(the_character.color))
 	CharactersList.set_item_icon(item_index, AvatarTexture)
 	CharactersList.set_item_metadata(item_index, character_id)
@@ -248,8 +247,7 @@ func update_character_list_item(character_id:int, the_character:Dictionary) -> v
 				CharactersList.set_item_icon_modulate(idx, Color(1, 1, 1, 1))
 			# if not, use default character icon
 			else:
-				var AvatarImage = Image.load_from_file("res://assets/default_avatar.png")
-				AvatarTexture = ImageTexture.create_from_image(AvatarImage)
+				AvatarTexture = load("res://assets/default_avatar.png")
 				CharactersList.set_item_icon_modulate(idx, Helpers.Utils.rgba_hex_to_color(the_character.color))
 			CharactersList.set_item_icon(idx, AvatarTexture)
 			return
@@ -282,8 +280,7 @@ func load_character_in_editor(character_id:int) -> void:
 		var AvatarTexture = ImageTexture.create_from_image(AvatarImage)
 		CharacterAvatarPickerButton.set("icon", AvatarTexture)
 	else:
-		var SymbolsImage = Image.load_from_file("res://assets/symbols.png")
-		var SymbolsTexture = ImageTexture.create_from_image(SymbolsImage)
+		var SymbolsTexture = load("res://assets/symbols.png")
 		var SymbolsAtlas = AtlasTexture.new()
 		SymbolsAtlas.atlas = SymbolsTexture
 		SymbolsAtlas.region = Rect2(Vector2(240, 96), Vector2(48, 48))
@@ -534,7 +531,7 @@ func _on_list_gui_input(event: InputEvent) -> void:
 		pass
 
 func _on_avatar_select_button() -> void:
-	Main.Mind.prompt_path_to(self, "use_image_as_avatar", [], Settings.PATH_DIALOG_PROPERTIES.AVATAR_IMAGE.OPEN)
+	Main.Mind.prompt_path_to(self, "use_image_as_avatar", [], Settings.PATH_DIALOG_PROPERTIES.ICON_IMAGE.OPEN)
 	pass
 
 func use_image_as_avatar(file_path:String) -> void:

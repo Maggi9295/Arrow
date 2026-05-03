@@ -5,10 +5,10 @@
 # Jump Console Element
 extends Control
 
-signal play_forward
+#signal play_forward
 signal status_code
 signal exit_scene
-signal get_return_node
+#signal get_return_node
 # signal clear_up
 # signal reset_variables
 # signal reset_characters_tags

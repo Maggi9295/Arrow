@@ -25,16 +25,6 @@ const HIDE_REASON_IF_UNSET = true
 #	# e.g. SOME_CHILD.connect("the_signal", self, "the_handler_on_self", [], CONNECT_DEFERRED)
 #	pass
 
-func _gui_input(event) -> void:
-	if event is InputEventMouseButton:
-		if event.is_double_click():
-			if event.is_alt_pressed() == true:
-				if _node_resource.has("data"):
-					var data = _node_resource.data
-					if data.has("target") && (data.target is int) && data.target >= 0:
-						Main.Mind.call_deferred("locate_node_on_grid", data.target)
-	pass
-
 func _update_node(data:Dictionary) -> void:
 	if data.has("reason") && (data.reason is String) && data.reason.length() > 0:
 		Reason.set_deferred("text", data.reason)

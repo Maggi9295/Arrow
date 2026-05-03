@@ -299,7 +299,7 @@ const PATH_DIALOG_PROPERTIES = {
 			"filters": []
 		}
 	},
-	"AVATAR_IMAGE" : {
+	"ICON_IMAGE" : {
 		"OPEN" : {
 			"title": "Select an Image",
 			"file_mode": FileDialog.FileMode.FILE_MODE_OPEN_FILE,
@@ -339,4 +339,9 @@ const THEMES = {
 
 const UI_TRANSLATIONS_DIR = "res://assets/translations"
 
-const AVATAR_RESOLUTION = 64
+# Icons belonging to characters and scenes
+# INFO: Images are storeg in base64 in the project file, thus increasing the image resolution will dramatically increase file size
+
+const AVATAR_RESOLUTION = 64 # Avatar icon resolution
+
+const THUMBNAIL_RESOLUTION = 64 # Scene icon resolution

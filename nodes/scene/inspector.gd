@@ -31,7 +31,6 @@ func _ready() -> void:
 
 func register_connections() -> void:
 	GlobalFilters.pressed.connect(self.refresh_scene_list, CONNECT_DEFERRED)
-	Scene.item_selected.connect(self._on_scene_selection_changed, CONNECT_DEFERRED)
 	pass
 	
 func refresh_scene_list(select_by_res_id:int = -1) -> void:
@@ -60,10 +59,6 @@ func refresh_scene_list(select_by_res_id:int = -1) -> void:
 		if already != null :
 			var scene_item_index = Scene.get_item_index(already)
 			Scene.select( scene_item_index )
-	pass
-
-func _on_scene_selection_changed(item_idx:int) -> void:
-	# TODO ?
 	pass
 
 func _update_parameters(node_id:int, node:Dictionary, do_cache:bool = true) -> void:

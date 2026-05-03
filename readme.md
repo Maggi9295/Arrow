@@ -28,6 +28,7 @@ Notable Features:
 Improvements over original program:
 
 + Avatar images for characters
++ Scenes now have a color and thumbnail image
 + Scene Node which plays a whole scene
 + Exit node to return to previous scene or properly end project
 
