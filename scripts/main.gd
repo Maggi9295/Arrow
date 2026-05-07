@@ -13,7 +13,7 @@ signal mind_initialized()
 @onready var UI = MainUserInterface.UiManager.new(self)
 @onready var Configs = Configuration.ConfigHandler.new(self)
 @onready var Mind = CentralMind.Mind.new(self)
-@onready var Grid = $/root/Main/Editor/Center/Grid
+@onready var Grid = $/root/Main/Editor/Center/Center/Grid
 
 # Quick Preferences (defaults)
 @export var _AUTO_INSPECT:bool = true
@@ -139,6 +139,7 @@ func store_window_state() -> void:
 func store_panels_state() -> void:
 	var panels_state = UI.read_panels_state()
 	Configs.TEMPORARY.panels = panels_state
+	# TODO store SplitContainer docking size
 	Configs.save_configurations_and_confirm(Configs.TEMPORARY, null, false)
 	print_debug("panel state saved: ", Configs.CONFIRMED.panels)
 	pass

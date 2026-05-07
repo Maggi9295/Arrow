@@ -41,6 +41,7 @@ class UiManager :
 	var MAIN_UI = {}
 	var BLOCKING_OVERLAY
 	var _OPEN_PANELS = []
+	var _PANEL_DOCK_STATE = {}
 	var _CACHED_THEME_ADJUSTMENT_LAYERS = []
 	
 	func _init(main) -> void:
@@ -84,6 +85,25 @@ class UiManager :
 	
 	func update_quick_preferences_switches_view() -> void:
 		MAIN_UI.quick_preferences.call_deferred("refresh_quick_preferences_menu_view")
+		pass
+		
+	func set_panel_dock_state(panel:String, docked:bool, slot=null) -> void:
+		var viewport_size = Main.get_viewport_rect().size
+		var as_node = PANELS[panel]
+		if docked && slot != null && slot is String:
+			_PANEL_DOCK_STATE[panel] = {"mode": "docked", "slot": slot}
+			# Get panel size/position and store in metadata
+			as_node.set_meta("size", as_node.get_size() / viewport_size)
+			as_node.set_meta("position", as_node.get_position() / viewport_size)
+			as_node.call_deferred("dock_panel", true, slot)
+		else:
+			_PANEL_DOCK_STATE[panel] = {"mode": "floating"}
+			as_node.call_deferred("dock_panel", false)
+			# Get panel size/position from metadata to restore to previous settings
+			if as_node.has_meta("size"):
+				as_node.call_deferred("_set_size", as_node.get_meta("size") * viewport_size)
+			if as_node.has_meta("position"):
+				as_node.call_deferred("_set_position", as_node.get_meta("position") * viewport_size)
 		pass
 	
 	func set_panel_visibility(panel:String, visibility:bool) -> void:
@@ -176,10 +196,25 @@ class UiManager :
 			var is_open = is_panel_open(panel) if PANELS_OPEN_BY_DEFAULT.has(panel) else null
 			# Save Panel position in relation to viewport size
 			var viewport_size = Main.get_viewport_rect().size
+			var mode = null
+			var slot = null
+			var size = as_node.get_size() / viewport_size
+			var position = as_node.get_position() / viewport_size
+			if _PANEL_DOCK_STATE.has(panel) && _PANEL_DOCK_STATE[panel].has("mode"):
+				mode = _PANEL_DOCK_STATE[panel].mode
+				if _PANEL_DOCK_STATE[panel].mode == "docked" && _PANEL_DOCK_STATE[panel].has("slot"):
+					slot = _PANEL_DOCK_STATE[panel].slot
+					# Get size/position from metadata
+					if as_node.has_meta("size"):
+						size = as_node.get_meta("size", null)
+					if as_node.has_meta("position"):
+						position = as_node.get_meta("position", null)
 			stateful[panel] = {
-				"size": as_node.get_size() / viewport_size,
-				"position": as_node.get_position() / viewport_size,
+				"size": size,
+				"position": position,
 				"open": is_open,
+				"mode": mode,
+				"slot": slot
 			}
 		return stateful
 	
@@ -204,10 +239,20 @@ class UiManager :
 			for panel in _PANELS_TRACKED:
 				var as_node = PANELS[panel]
 				var state = _PANELS_TRACKED[panel]
-				if state.has("size") && state.size.x < 1 && state.size.x > 0 && state.size.y < 1 && state.size.y > 0:
-					as_node.call_deferred("_set_size", state.size * viewport_size)
-				if state.has("position") && state.position.x < 1 && state.position.x > 0 && state.position.y < 1 && state.position.y > 0:
-					as_node.call_deferred("_set_position", state.position * viewport_size)
+				if state.has("mode") && state.mode == "docked" && state.has("slot"):
+					_PANEL_DOCK_STATE[panel] = {"mode": state.mode, "slot": state.slot}
+					as_node.call_deferred("dock_panel", true, state.slot)
+					# "Backup" size and position data in metadata
+					if state.has("size"):
+						as_node.set_meta("size", state.size)
+					if state.has("position"):
+						as_node.set_meta("position", state.position)
+				else:
+					_PANEL_DOCK_STATE[panel] = {"mode": "floating"}
+					if state.has("size") && state.size.x < 1 && state.size.x > 0 && state.size.y < 1 && state.size.y > 0:
+						as_node.call_deferred("_set_size", state.size * viewport_size)
+					if state.has("position") && state.position.x < 1 && state.position.x > 0 && state.position.y < 1 && state.position.y > 0:
+						as_node.call_deferred("_set_position", state.position * viewport_size)
 				if state.open is bool:
 					self.call_deferred("set_panel_visibility", panel, state.open)
 			_PANELS_TRACKED = {}

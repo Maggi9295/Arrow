@@ -8,6 +8,11 @@ extends Control
 signal request_mind()
 
 @onready var Main = get_tree().get_root().get_child(0)
+@onready var EditorCenter = $/root/Main/Editor/Center
+@onready var FloatingTools = $/root/Main/FloatingTools/Control
+
+@onready var drag_point = $/root/Main/FloatingTools/Control/Inspector/Sections/Titlebar/Drag
+@onready var resize_point = $/root/Main/FloatingTools/Control/Inspector/Sections/Titlebar/Resizer
 
 @onready var TheTabContainer = $/root/Main/FloatingTools/Control/Inspector/Sections/Tabs
 @onready var Tab = {
@@ -21,6 +26,7 @@ signal request_mind()
 @onready var TabSelectorPopup = (
 	$/root/Main/FloatingTools/Control/Inspector/Sections/Titlebar/TabSelector
 ).get_popup()
+@onready var DockButton = $/root/Main/FloatingTools/Control/Inspector/Sections/Titlebar/Dock
 
 func _ready() -> void:
 	_register_connections()
@@ -39,6 +45,7 @@ func _register_connections() -> void:
 	TheTabContainer.tab_changed.connect(self.refresh_inspector_tab)
 	TheTabContainer.gui_input.connect(self._on_gui_input)
 	TabSelectorPopup.id_pressed.connect(self._on_tab_selector_popup_id_pressed)
+	DockButton.toggled.connect(self._on_button_pressed)
 	pass
 
 # called by Mind while opening a project
@@ -124,11 +131,42 @@ func _on_gui_input(event: InputEvent) -> void:
 		scroll_tabs_workaround(event)
 	pass
 
+func _on_button_pressed(toggled_on: bool) -> void:
+	if toggled_on:
+		Main.UI.set_panel_dock_state("inspector", true, "right")
+	else:
+		Main.UI.set_panel_dock_state("inspector", false)
+	pass
+
+# Called from UiManager
+func dock_panel(dock: bool, slot=null) -> void:
+	if dock:
+		# TODO implement slots
+		# Reparent to Editor
+		self.get_parent().remove_child(self)
+		EditorCenter.add_child(self)
+		draggable.update_parent()
+		# Disable resizing & dragging
+		draggable.disable()
+		resizable.disable()
+		drag_point.mouse_default_cursor_shape = Control.CURSOR_ARROW
+		resize_point.visible = false
+		DockButton.set_pressed_no_signal(true) # Turn button on to have button be on if panel is docked during init and not via button press
+	else:
+		# Reparent to FloatingTools
+		self.get_parent().remove_child(self)
+		FloatingTools.add_child(self)
+		draggable.update_parent()
+		# Enable resizing & dragging
+		draggable.enable()
+		resizable.enable()
+		drag_point.mouse_default_cursor_shape = Control.CURSOR_DRAG
+		resize_point.visible = true
+	pass
+
 # make this panel,
 # draggable
 	# ... it also makes the panel compete for the parent's top z-index by default
-@onready var drag_point = $/root/Main/FloatingTools/Control/Inspector/Sections/Titlebar/Drag
 @onready var draggable = Helpers.Draggable.new(self, drag_point)
 # and resizable
-@onready var resize_pont = $/root/Main/FloatingTools/Control/Inspector/Sections/Titlebar/Resizer
-@onready var resizable = Helpers.Resizable.new(self, resize_pont)
+@onready var resizable = Helpers.Resizable.new(self, resize_point)

@@ -587,6 +587,8 @@ class Draggable:
 	var _COMPETE_FOR_PARENT_TOP_VIEW:bool = false
 	var _PARENT:Node
 	
+	var _ENABLED: bool = true
+	
 	func _init(draggable:Node, drag_point:Node, compete_for_parent_top_layer:bool = true) -> void:
 		_DRAGGABLE = draggable
 		_DRAG_POINT = drag_point
@@ -604,6 +606,8 @@ class Draggable:
 		pass
 	
 	func drag_element(event:InputEvent) -> void:
+		if not _ENABLED:
+			return
 		if event is InputEventMouseMotion:
 			if event.get_button_mask() == MouseButtonMask.MOUSE_BUTTON_MASK_LEFT:
 				var rel_mouse_position = event.get_relative() # ... to its previous pos
@@ -620,6 +624,18 @@ class Draggable:
 	func steal_top() -> void:
 		_PARENT.move_child(_DRAGGABLE, _PARENT.get_child_count())
 		pass
+		
+	func enable() -> void:
+		_ENABLED = true
+		pass
+	
+	func disable() -> void:
+		_ENABLED = false
+		pass
+	
+	func update_parent() -> void:
+		_PARENT = _DRAGGABLE.get_parent()
+		pass
 
 # Resizable Controls
 class Resizable:
@@ -631,6 +647,8 @@ class Resizable:
 	var _USE_REVERSE_MOUSE_Y:bool
 	var _RESIZE_FROM_TOP:bool
 	var _VIEWPORT:Node
+	
+	var _ENABLED: bool = true
 	
 	func _init(resizable:Node, resize_point:Node, use_reverse_mouse_y:bool = true, resize_from_top:bool = true) -> void:
 		_RESIZABLE = resizable
@@ -646,6 +664,8 @@ class Resizable:
 		pass
 	
 	func resize_element(event:InputEvent) -> void:
+		if not _ENABLED:
+			return
 		if event is InputEventMouseMotion:
 			if event.get_button_mask() == MouseButtonMask.MOUSE_BUTTON_MASK_LEFT:
 				var rel_mouse_position = event.get_relative() # ... to its previous pos
@@ -660,6 +680,14 @@ class Resizable:
 					var current_resizable_position  = _RESIZABLE.get_position()
 					current_resizable_position.y = current_resizable_position.y - rel_mouse_position.y
 					_RESIZABLE.set_position(current_resizable_position)
+		pass
+	
+	func enable() -> void:
+		_ENABLED = true
+		pass
+	
+	func disable() -> void:
+		_ENABLED = false
 		pass
 
 # Generator helpers

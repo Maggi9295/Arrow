@@ -47,6 +47,10 @@ region = Rect2(0, 48, 48, 48)
 [sub_resource type="AtlasTexture" id="AtlasTexture_yjkme"]
 region = Rect2(48, 48, 48, 48)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_seu75"]
+atlas = ExtResource("7_0tmvq")
+region = Rect2(240, 192, 48, 48)
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_3t2oi"]
 atlas = ExtResource("7_0tmvq")
 region = Rect2(144, 48, 48, 48)
@@ -844,6 +848,17 @@ expand_icon = true
 custom_minimum_size = Vector2(32, 0)
 layout_mode = 2
 icon = SubResource("AtlasTexture_yjkme")
+icon_alignment = 1
+expand_icon = true
+
+[node name="Dock" type="Button" parent="FloatingTools/Control/Inspector/Sections/Titlebar" unique_id=1894895253]
+custom_minimum_size = Vector2(24, 0)
+layout_mode = 2
+theme_override_colors/icon_normal_color = Color(1, 1, 1, 0.4)
+theme_override_colors/icon_pressed_color = Color(1, 1, 1, 0.73333335)
+toggle_mode = true
+icon = SubResource("AtlasTexture_seu75")
+flat = true
 icon_alignment = 1
 expand_icon = true
 
@@ -2134,18 +2149,25 @@ grow_horizontal = 2
 grow_vertical = 0
 color = Color(0.74902, 0.121569, 0.54902, 1)
 
-[node name="Center" type="Control" parent="Editor" unique_id=1100785542]
-layout_direction = 2
+[node name="Center" type="HSplitContainer" parent="Editor" unique_id=973445378]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Grid" type="GraphEdit" parent="Editor/Center" unique_id=236016454]
+[node name="Center" type="Control" parent="Editor/Center" unique_id=1100785542]
+layout_direction = 2
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 3.0
+
+[node name="Grid" type="GraphEdit" parent="Editor/Center/Center" unique_id=236016454]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+scroll_offset = Vector2(-12, 0)
 snapping_distance = 5
 right_disconnects = true
 zoom_min = 0.1
@@ -2156,7 +2178,7 @@ minimap_size = Vector2(1024, 256)
 show_zoom_label = true
 script = ExtResource("25_3y1ae")
 
-[node name="MiniMap" type="Panel" parent="Editor/Center" unique_id=686143078]
+[node name="MiniMap" type="Panel" parent="Editor/Center/Center" unique_id=686143078]
 layout_mode = 1
 anchors_preset = -1
 anchor_top = 1.0
@@ -2166,7 +2188,7 @@ offset_top = -100.0
 offset_right = 300.0
 offset_bottom = -25.0
 
-[node name="Area" type="Control" parent="Editor/Center/MiniMap" unique_id=989614938]
+[node name="Area" type="Control" parent="Editor/Center/Center/MiniMap" unique_id=989614938]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

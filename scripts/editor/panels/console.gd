@@ -724,6 +724,11 @@ func get_last_scene_call_stack_item(_the_player_one = null, _the_player_one_uid 
 		return _SCENE_CALL_STACK[-1] # return last element
 	return {}
 
+# Called from UiManager
+func dock_panel(dock: bool, slot=null) -> void:
+	# TODO implement docking for console
+	pass
+
 # make this panel,
 # draggable
 # ... it also makes the panel compete for the parent's top z-index by default
