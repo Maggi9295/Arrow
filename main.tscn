@@ -151,6 +151,13 @@ region = Rect2(192, 96, 48, 48)
 atlas = ExtResource("7_0tmvq")
 region = Rect2(144, 144, 48, 48)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kq58d"]
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qsp4k"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_tx0hw"]
@@ -1799,6 +1806,17 @@ flat = true
 alignment = 0
 expand_icon = true
 
+[node name="Dock" type="Button" parent="FloatingTools/Control/Console/Sections/Titlebar" unique_id=313691433]
+custom_minimum_size = Vector2(24, 0)
+layout_mode = 2
+theme_override_colors/icon_normal_color = Color(1, 1, 1, 0.4)
+theme_override_colors/icon_pressed_color = Color(1, 1, 1, 0.73333335)
+toggle_mode = true
+icon = SubResource("AtlasTexture_seu75")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
 [node name="Resizer" type="Button" parent="FloatingTools/Control/Console/Sections/Titlebar" unique_id=1079444477]
 custom_minimum_size = Vector2(24, 0)
 layout_mode = 2
@@ -2152,8 +2170,21 @@ color = Color(0.74902, 0.121569, 0.54902, 1)
 [node name="Center" type="HSplitContainer" parent="Editor" unique_id=973445378]
 layout_mode = 2
 size_flags_vertical = 3
+split_offsets = PackedInt32Array(64)
+split_offset = 64
+
+[node name="LeftDock" type="VSplitContainer" parent="Editor/Center" unique_id=605806028]
+visible = false
+layout_mode = 2
+
+[node name="Highlight" type="Panel" parent="Editor/Center/LeftDock" unique_id=13453021]
+visible = false
+custom_minimum_size = Vector2(100, 100)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_kq58d")
 
 [node name="Center" type="Control" parent="Editor/Center" unique_id=1100785542]
+custom_minimum_size = Vector2(100, 100)
 layout_direction = 2
 layout_mode = 2
 size_flags_horizontal = 3
@@ -2167,7 +2198,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-scroll_offset = Vector2(-12, 0)
 snapping_distance = 5
 right_disconnects = true
 zoom_min = 0.1
@@ -2196,6 +2226,16 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("26_g6oda")
+
+[node name="RightDock" type="VSplitContainer" parent="Editor/Center" unique_id=1064092541]
+visible = false
+layout_mode = 2
+
+[node name="Highlight" type="Panel" parent="Editor/Center/RightDock" unique_id=1203432661]
+visible = false
+custom_minimum_size = Vector2(100, 100)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_kq58d")
 
 [node name="Bottom" type="PanelContainer" parent="Editor" unique_id=471461391]
 layout_mode = 2

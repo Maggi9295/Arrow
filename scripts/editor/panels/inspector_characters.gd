@@ -477,7 +477,7 @@ func submit_character_modification() -> void:
 		var AvatarByteArray = AvatarImage.save_png_to_buffer()
 		var AvatarBase64 = Marshalls.raw_to_base64(AvatarByteArray)
 		var mod_avatar = AvatarBase64
-		if mod_avatar != the_character_original.avatar: # avatar is changed
+		if not the_character_original.has("avatar") || mod_avatar != the_character_original.avatar: # avatar is changed
 			resource_updater.modification["avatar"] = mod_avatar
 	if mod_name.length() > 0 && mod_name != the_character_original.name: # name is changed
 		mod_name = Helpers.Utils.exposure_safe_resource_name(mod_name)

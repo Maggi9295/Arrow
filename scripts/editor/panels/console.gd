@@ -8,7 +8,10 @@ extends Control
 signal request_mind()
 
 @onready var TheTree = get_tree()
-@onready var Main = TheTree.get_root().get_child(0)
+@onready var Main = get_tree().get_root().get_child(0)
+@onready var LeftDock = $/root/Main/Editor/Center/LeftDock
+@onready var RightDock = $/root/Main/Editor/Center/RightDock
+@onready var FloatingTools = $/root/Main/FloatingTools/Control
 
 @onready var TerminalScroll = $/root/Main/FloatingTools/Control/Console/Sections/Interpreter/Split/Display/Scroll
 @onready var Terminal = $/root/Main/FloatingTools/Control/Console/Sections/Interpreter/Split/Display/Scroll/Terminal
@@ -17,6 +20,11 @@ signal request_mind()
 @onready var PlayStepBackButton = $/root/Main/FloatingTools/Control/Console/Sections/Toolbar/Back
 @onready var SettingsMenuButton = $/root/Main/FloatingTools/Control/Console/Sections/Toolbar/Settings
 @onready var SettingsMenuButtonPopup = SettingsMenuButton.get_popup()
+
+@onready var DockButton = $/root/Main/FloatingTools/Control/Console/Sections/Titlebar/Dock
+
+@onready var drag_point = $/root/Main/FloatingTools/Control/Console/Sections/Titlebar/Drag
+@onready var resize_point = $/root/Main/FloatingTools/Control/Console/Sections/Titlebar/Resizer
 
 const CONSOLE_MESSAGE_DEFAULT_COLOR = Settings.CONSOLE_MESSAGE_DEFAULT_COLOR
 const CONSOLE_MESSAGE_PRINT_PROPERTIES = {
@@ -81,10 +89,20 @@ var _CONSOLE_SETTINGS_MENU_ITEM_INDEX_BY_ACTION = {}
 
 const CHAR_TAG_KEY_VALUE_DISPLAY_TEMPLATE = "`{value}`" # also available: {key}
 
+# make this panel,
+# draggable
+# ... it also makes the panel compete for the parent's top z-index by default
+@onready var draggable = Helpers.Draggable.new(self, drag_point)
+# and resizable
+@onready var resizable = Helpers.Resizable.new(self, resize_point)
+
 func _ready() -> void:
 	register_connections()
 	load_console_settings_menu()
 	pass
+
+func _process(_delta: float) -> void:
+	draggable.process_drag()
 
 func register_connections() -> void:
 	ClearConsoleButton.pressed.connect(self._request_mind.bind("console_clear"), CONNECT_DEFERRED)
@@ -95,6 +113,13 @@ func register_connections() -> void:
 	VariableInspectorUpdateButton.pressed.connect(self.update_current_inspected_variable, CONNECT_DEFERRED)
 	CharTagsInspectorSelect.item_selected.connect(self._on_char_tags_inspector_item_select, CONNECT_DEFERRED)
 	CharTagsInspectorEditOverset.pressed.connect(self.read_and_overset_current_inspected_char_tag, CONNECT_DEFERRED)
+	DockButton.toggled.connect(self._on_button_pressed)
+	# Connect Draggable functions to UiManager AFTER UI has been initialized
+	while Main.UI == null: # TODO maybe make more elegant by moving to main_ui_management or by different means
+		await get_tree().process_frame
+	draggable.on_drag_started = Main.UI._on_panel_drag_started
+	draggable.on_drag_moved = Main.UI._on_panel_dragged
+	draggable.on_drag_ended = Main.UI._on_panel_drag_ended
 	pass
 
 func _request_mind(req:String, args = null) -> void:
@@ -724,16 +749,51 @@ func get_last_scene_call_stack_item(_the_player_one = null, _the_player_one_uid 
 		return _SCENE_CALL_STACK[-1] # return last element
 	return {}
 
-# Called from UiManager
-func dock_panel(dock: bool, slot=null) -> void:
-	# TODO implement docking for console
+func _on_button_pressed(toggled_on: bool) -> void:
+	if toggled_on:
+		Main.UI.set_panel_dock_state("console", true, Settings.DEFAULT_CONSOLE_DOCK_SLOT)
+	else:
+		Main.UI.set_panel_dock_state("console", false)
 	pass
 
-# make this panel,
-# draggable
-# ... it also makes the panel compete for the parent's top z-index by default
-@onready var drag_point = $/root/Main/FloatingTools/Control/Console/Sections/Titlebar/Drag
-@onready var draggable = Helpers.Draggable.new(self, drag_point)
-# and resizable
-@onready var resize_point = $/root/Main/FloatingTools/Control/Console/Sections/Titlebar/Resizer
-@onready var resizable = Helpers.Resizable.new(self, resize_point)
+# Called from UiManager
+func dock_panel(dock: bool, slot=null) -> void:
+	# Remember global position
+	if dock:
+		# TODO implement slots
+		# TODO remove thumbtack button?
+		# Reparent to Editor
+		self.get_parent().remove_child(self)
+		if slot != null && slot is Dictionary && slot.has("dock") && slot.dock is String:
+			if slot.dock == "left":
+				LeftDock.add_child(self)
+			elif slot.dock == "right":
+				RightDock.add_child(self)
+			else:
+				printerr("Invalid docking slot")
+				RightDock.add_child(self)
+			draggable.update_parent()
+			# Disable resizing & dragging
+			#draggable.disable()
+			resizable.disable()
+			#drag_point.mouse_default_cursor_shape = Control.CURSOR_ARROW
+			resize_point.visible = false
+			DockButton.set_pressed_no_signal(true) # Turn button on to have button be on if panel is docked during init and not via button press
+		else:
+			printerr("No docking slot specified")
+	else:
+		# Remember global position
+		var global_pos = self.global_position
+		# Reparent to FloatingTools
+		self.get_parent().remove_child(self)
+		FloatingTools.add_child(self)
+		# Plaxe at global position
+		global_position = global_pos
+		draggable.update_parent()
+		# Enable resizing & dragging
+		#draggable.enable()
+		resizable.enable()
+		#drag_point.mouse_default_cursor_shape = Control.CURSOR_DRAG
+		resize_point.visible = true
+		DockButton.set_pressed_no_signal(false)
+	pass

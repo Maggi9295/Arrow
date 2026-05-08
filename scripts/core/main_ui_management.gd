@@ -23,6 +23,10 @@ const MAIN_UI_PATHS = {
 	"app_menu": "/root/Main/Editor/Top/Bar/AppMenu",
 	"quick_preferences": "/root/Main/Editor/Bottom/Bar/Quick/Access/SpecialPreferences",
 	"inspector_view_toggle": "/root/Main/Editor/Bottom/Bar/Quick/Access/InspectorVisibility",
+	"left_dock": "/root/Main/Editor/Center/LeftDock",
+	"right_dock": "/root/Main/Editor/Center/RightDock",
+	"left_dock_highlight": "/root/Main/Editor/Center/LeftDock/Highlight",
+	"right_dock_highlight": "/root/Main/Editor/Center/RightDock/Highlight",
 }
 
 const THEME_ADJUSTMENT_LAYERS = [
@@ -87,23 +91,119 @@ class UiManager :
 		MAIN_UI.quick_preferences.call_deferred("refresh_quick_preferences_menu_view")
 		pass
 		
-	func set_panel_dock_state(panel:String, docked:bool, slot=null) -> void:
+	func _on_panel_drag_started(panel_node) -> void:
+		var panel_name = get_panel_name(panel_node)
+		# If panel is/was docked ...
+		if _PANEL_DOCK_STATE.has(panel_name) && _PANEL_DOCK_STATE[panel_name].has("mode") && _PANEL_DOCK_STATE[panel_name].mode == "docked":
+			# Undock
+			set_panel_dock_state(panel_name, false, null, false)
+			# Restore size
+			if panel_node.has_meta("size"):
+				var viewport_size = Main.get_viewport_rect().size
+				panel_node.call_deferred("_set_size", panel_node.get_meta("size") * viewport_size)
+		pass
+		
+	func _on_panel_dragged(panel_node) -> void:
+		var mouse = Main.get_global_mouse_position()
+		highlight_dock_slot(mouse)
+		pass
+		
+	func _on_panel_drag_ended(panel_node) -> void:
+		var panel_name = get_panel_name(panel_node)
+		var mouse = Main.get_global_mouse_position()
+		var viewport_size = Main.get_viewport_rect().size
+		
+		# hide highlights
+		MAIN_UI["right_dock_highlight"].visible = false
+		MAIN_UI["left_dock_highlight"].visible = false
+		
+		# right dock
+		if mouse.x > viewport_size.x - Settings.DOCK_THRESHOLD:
+			set_panel_dock_state(panel_name, true, {"dock": "right", "position": 0})
+		# left dock
+		elif mouse.x < 0 + Settings.DOCK_THRESHOLD:
+			set_panel_dock_state(panel_name, true, {"dock": "left", "position": 0})
+		# undock (only if panel hasn't been docked previously)
+		#elif _PANEL_DOCK_STATE.has(panel_name) && _PANEL_DOCK_STATE[panel_name].has("mode") && _PANEL_DOCK_STATE[panel_name].mode == "docked":
+		#	set_panel_dock_state(panel_name, false, null, false)
+		
+		# hide docks without panels
+		if not is_dock_occupied("right"):
+			MAIN_UI["right_dock"].visible = false
+		if not is_dock_occupied("left"):
+			MAIN_UI["left_dock"].visible = false
+		pass
+		
+	func highlight_dock_slot(mouse_position) -> void:
+		var viewport_size = Main.get_viewport_rect().size
+		# right dock
+		if mouse_position.x > viewport_size.x - Settings.DOCK_THRESHOLD:
+			if MAIN_UI["right_dock"].visible == false:
+				MAIN_UI["right_dock"].visible = true
+			MAIN_UI["right_dock_highlight"].visible = true
+		else:
+			if not is_dock_occupied("right"):
+				MAIN_UI["right_dock"].visible = false
+			MAIN_UI["right_dock_highlight"].visible = false
+		# left dock
+		if mouse_position.x < 0 + Settings.DOCK_THRESHOLD:
+			if MAIN_UI["left_dock"].visible == false:
+				MAIN_UI["left_dock"].visible = true
+			MAIN_UI["left_dock_highlight"].visible = true
+		else:
+			if not is_dock_occupied("left"):
+				MAIN_UI["left_dock"].visible = false
+			MAIN_UI["left_dock_highlight"].visible = false
+		pass
+	
+	func is_dock_occupied(dock:String) -> bool:
+		for panel in _PANEL_DOCK_STATE:
+			# If panel is docked, panel dock is requested dock and panel is open
+			if _PANEL_DOCK_STATE[panel].has("mode") && _PANEL_DOCK_STATE[panel].mode == "docked" \
+					&& _PANEL_DOCK_STATE[panel].has("slot") && _PANEL_DOCK_STATE[panel].slot.has("dock") \
+					&& _PANEL_DOCK_STATE[panel].slot.dock == dock && is_panel_open(panel):
+				return true
+		return false
+		
+	func update_dock_visibility() -> void:
+		if is_dock_occupied("left"):
+			MAIN_UI["left_dock"].visible = true
+		else:
+			MAIN_UI["left_dock"].visible = false
+		if is_dock_occupied("right"):
+			MAIN_UI["right_dock"].visible = true
+		else:
+			MAIN_UI["right_dock"].visible = false
+		pass
+	
+	func get_panel_name(panel_node) -> String:
+		for panel_name in PANELS:
+			if PANELS[panel_name] == panel_node:
+				return panel_name
+		return ""
+		
+	func set_panel_dock_state(panel:String, docked:bool, slot=null, update_position:bool=true) -> void:
 		var viewport_size = Main.get_viewport_rect().size
 		var as_node = PANELS[panel]
-		if docked && slot != null && slot is String:
-			_PANEL_DOCK_STATE[panel] = {"mode": "docked", "slot": slot}
-			# Get panel size/position and store in metadata
-			as_node.set_meta("size", as_node.get_size() / viewport_size)
-			as_node.set_meta("position", as_node.get_position() / viewport_size)
+		if docked && slot != null && slot is Dictionary && slot.has("dock") && slot.dock is String:
+			print("dock", randi())
+			# If panel wasn't docked, get panel size/position and store in metadata
+			if  not _PANEL_DOCK_STATE.has(panel) || (_PANEL_DOCK_STATE[panel].has("mode") && _PANEL_DOCK_STATE[panel].mode != "docked"):
+				as_node.set_meta("size", as_node.get_size() / viewport_size)
+				as_node.set_meta("position", as_node.get_global_position() / viewport_size)
 			as_node.call_deferred("dock_panel", true, slot)
+			_PANEL_DOCK_STATE[panel] = {"mode": "docked", "slot": slot}
+			update_dock_visibility()
 		else:
-			_PANEL_DOCK_STATE[panel] = {"mode": "floating"}
+			print("undock", randi())
 			as_node.call_deferred("dock_panel", false)
+			_PANEL_DOCK_STATE[panel] = {"mode": "floating"}
 			# Get panel size/position from metadata to restore to previous settings
 			if as_node.has_meta("size"):
 				as_node.call_deferred("_set_size", as_node.get_meta("size") * viewport_size)
-			if as_node.has_meta("position"):
+			if as_node.has_meta("position") && update_position:
 				as_node.call_deferred("_set_position", as_node.get_meta("position") * viewport_size)
+			update_dock_visibility()
 		pass
 	
 	func set_panel_visibility(panel:String, visibility:bool) -> void:
@@ -120,6 +220,7 @@ class UiManager :
 		# ... then open and track the `panel`
 		PANELS[panel].set_deferred("visible", visibility)
 		track_open_panels(panel, visibility)
+		update_dock_visibility()
 		pass
 		
 	func toggle_panel_visibility(panel:String) -> void:
@@ -199,7 +300,7 @@ class UiManager :
 			var mode = null
 			var slot = null
 			var size = as_node.get_size() / viewport_size
-			var position = as_node.get_position() / viewport_size
+			var position = as_node.get_global_position() / viewport_size
 			if _PANEL_DOCK_STATE.has(panel) && _PANEL_DOCK_STATE[panel].has("mode"):
 				mode = _PANEL_DOCK_STATE[panel].mode
 				if _PANEL_DOCK_STATE[panel].mode == "docked" && _PANEL_DOCK_STATE[panel].has("slot"):
@@ -240,8 +341,7 @@ class UiManager :
 				var as_node = PANELS[panel]
 				var state = _PANELS_TRACKED[panel]
 				if state.has("mode") && state.mode == "docked" && state.has("slot"):
-					_PANEL_DOCK_STATE[panel] = {"mode": state.mode, "slot": state.slot}
-					as_node.call_deferred("dock_panel", true, state.slot)
+					set_panel_dock_state(panel, true, state.slot)
 					# "Backup" size and position data in metadata
 					if state.has("size"):
 						as_node.set_meta("size", state.size)
@@ -252,7 +352,7 @@ class UiManager :
 					if state.has("size") && state.size.x < 1 && state.size.x > 0 && state.size.y < 1 && state.size.y > 0:
 						as_node.call_deferred("_set_size", state.size * viewport_size)
 					if state.has("position") && state.position.x < 1 && state.position.x > 0 && state.position.y < 1 && state.position.y > 0:
-						as_node.call_deferred("_set_position", state.position * viewport_size)
+						as_node.call_deferred("_set_global_position", state.position * viewport_size)
 				if state.open is bool:
 					self.call_deferred("set_panel_visibility", panel, state.open)
 			_PANELS_TRACKED = {}

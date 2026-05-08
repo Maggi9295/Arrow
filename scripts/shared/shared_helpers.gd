@@ -589,6 +589,13 @@ class Draggable:
 	
 	var _ENABLED: bool = true
 	
+	var _DRAGGING: bool = false
+	var _DRAG_OFFSET: Vector2 = Vector2.ZERO
+	
+	var on_drag_started: Callable
+	var on_drag_moved: Callable
+	var on_drag_ended: Callable
+	
 	func _init(draggable:Node, drag_point:Node, compete_for_parent_top_layer:bool = true) -> void:
 		_DRAGGABLE = draggable
 		_DRAG_POINT = drag_point
@@ -608,17 +615,34 @@ class Draggable:
 	func drag_element(event:InputEvent) -> void:
 		if not _ENABLED:
 			return
-		if event is InputEventMouseMotion:
-			if event.get_button_mask() == MouseButtonMask.MOUSE_BUTTON_MASK_LEFT:
-				var rel_mouse_position = event.get_relative() # ... to its previous pos
-				var current_draggable_position  = _DRAGGABLE.get_position()
-				var the_viewport_size = _VIEWPORT.get_size()
-				var new_draggable_position = (current_draggable_position + rel_mouse_position)
-				new_draggable_position = Vector2d.limit_vector2(new_draggable_position, the_viewport_size, true, LIMIT_PADDING)
-				_DRAGGABLE.set_position(new_draggable_position)
 		if event is InputEventMouseButton:
-			if event.is_pressed() && _COMPETE_FOR_PARENT_TOP_VIEW == true:
-				steal_top()
+			if event.is_pressed(): # Mouse pressed
+				print("drag_started")
+				_DRAGGING = true
+				_DRAG_OFFSET = _VIEWPORT.get_mouse_position() - _DRAGGABLE.global_position # Remember distance from ouse pointer to panel corner
+				if _COMPETE_FOR_PARENT_TOP_VIEW:
+					steal_top()
+				if on_drag_started.is_valid():
+					on_drag_started.call(_DRAGGABLE) # TODO determine if call_deferred would be better
+		pass
+	
+	func process_drag() -> void:
+		if not _DRAGGING || not _ENABLED:
+			return
+		if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT): # TODO use more elegant input checking method?
+			print("drag_ended")
+			_DRAGGING = false
+			if on_drag_ended.is_valid():
+				on_drag_ended.call(_DRAGGABLE) # TODO determine if call_deferred would be better
+			return
+			
+		var mouse = _VIEWPORT.get_mouse_position()
+		var new_draggable_position = mouse - _DRAG_OFFSET
+		var the_viewport_size = _VIEWPORT.get_size()
+		new_draggable_position = Vector2d.limit_vector2(new_draggable_position, the_viewport_size, true, LIMIT_PADDING)
+		_DRAGGABLE.set_global_position(new_draggable_position)
+		if on_drag_moved.is_valid():
+			on_drag_moved.call(_DRAGGABLE)
 		pass
 	
 	func steal_top() -> void:

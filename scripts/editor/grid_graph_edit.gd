@@ -663,7 +663,7 @@ func resize_to_best_fit(instance, data: Dictionary) -> void:
 		var new_size = Helpers.Utils.array_to_vector2(data.rect)
 		instance.set_deferred("size", new_size)
 	else:
-		shrink_to_fit(instance) # TODO fix bug where instance has been freed at this point (caused when alt+doubleclicking scene node and loading scene)
+		shrink_to_fit(instance) # TODO fix bug where instance has sometimes been freed at this point (caused when alt+doubleclicking scene node and loading scene)
 	pass
 
 func _on_resize_request(new_size, instance) -> void:

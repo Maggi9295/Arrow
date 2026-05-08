@@ -345,3 +345,10 @@ const UI_TRANSLATIONS_DIR = "res://assets/translations"
 const AVATAR_RESOLUTION = 64 # Avatar icon resolution
 
 const THUMBNAIL_RESOLUTION = 64 # Scene icon resolution
+
+# Panel docking
+
+const DOCK_THRESHOLD = 100
+
+const DEFAULT_INSPECTOR_DOCK_SLOT = {"dock": "right", "position": 0}
+const DEFAULT_CONSOLE_DOCK_SLOT = {"dock": "left", "position": 0}
