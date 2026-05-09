@@ -660,6 +660,18 @@ class Draggable:
 	func update_parent() -> void:
 		_PARENT = _DRAGGABLE.get_parent()
 		pass
+		
+	func enable_top_layer() -> void:
+		_COMPETE_FOR_PARENT_TOP_VIEW = true
+		if _DRAGGABLE.has_signal("visibility_changed"):
+			_DRAGGABLE.visibility_changed.connect(self.steal_top, CONNECT_DEFERRED)
+		pass
+		
+	func disable_top_layer() -> void:
+		_COMPETE_FOR_PARENT_TOP_VIEW = true
+		if _DRAGGABLE.has_signal("visibility_changed"):
+			_DRAGGABLE.visibility_changed.disconnect(self.steal_top)
+		pass
 
 # Resizable Controls
 class Resizable:

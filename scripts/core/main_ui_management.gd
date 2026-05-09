@@ -110,7 +110,7 @@ class UiManager :
 		
 	func _on_panel_drag_ended(panel_node) -> void:
 		var panel_name = get_panel_name(panel_node)
-		var mouse = Main.get_global_mouse_position()
+		var global_mouse_position = Main.get_global_mouse_position()
 		var viewport_size = Main.get_viewport_rect().size
 		
 		# hide highlights
@@ -118,11 +118,11 @@ class UiManager :
 		MAIN_UI["left_dock_highlight"].visible = false
 		
 		# right dock
-		if mouse.x > viewport_size.x - Settings.DOCK_THRESHOLD:
-			set_panel_dock_state(panel_name, true, {"dock": "right", "position": 0})
+		if global_mouse_position.x > viewport_size.x - Settings.DOCK_THRESHOLD:
+			set_panel_dock_state(panel_name, true, {"dock": "right", "position": get_dock_index_from_position("right_dock", global_mouse_position)})
 		# left dock
-		elif mouse.x < 0 + Settings.DOCK_THRESHOLD:
-			set_panel_dock_state(panel_name, true, {"dock": "left", "position": 0})
+		elif global_mouse_position.x < 0 + Settings.DOCK_THRESHOLD:
+			set_panel_dock_state(panel_name, true, {"dock": "left", "position": get_dock_index_from_position("left_dock", global_mouse_position)})
 		# undock (only if panel hasn't been docked previously)
 		#elif _PANEL_DOCK_STATE.has(panel_name) && _PANEL_DOCK_STATE[panel_name].has("mode") && _PANEL_DOCK_STATE[panel_name].mode == "docked":
 		#	set_panel_dock_state(panel_name, false, null, false)
@@ -134,22 +134,55 @@ class UiManager :
 			MAIN_UI["left_dock"].visible = false
 		pass
 		
-	func highlight_dock_slot(mouse_position) -> void:
+	func insert_panel_at_index(dock_name:String, panel_node, index:int = -1) -> void:
+		MAIN_UI[dock_name].add_child(panel_node)
+		MAIN_UI[dock_name].move_child(panel_node, index)
+		MAIN_UI[dock_name].queue_sort()
+		print("-------------------------------------------------------------")
+		print("----------- Left")
+		for panel in MAIN_UI["left_dock"].get_children():
+			print("Name: ", panel.name, ", Index: ", panel.get_index())
+		print("----------- Right")
+		for panel in MAIN_UI["right_dock"].get_children():
+			print("Name: ", panel.name, ", Index: ", panel.get_index())
+		# Update index of all other panels (not this one since it's being stored in set_panel_dock_state() anyway)
+		for panel in _PANEL_DOCK_STATE:
+			var as_node = PANELS[panel]
+			# if panel isn't current panel and panel is docked in current dock
+			if as_node != panel_node && _PANEL_DOCK_STATE[panel].has("mode") && _PANEL_DOCK_STATE[panel].mode == "docked" \
+					&& _PANEL_DOCK_STATE[panel].has("slot") && _PANEL_DOCK_STATE[panel].slot.has("dock") \
+					&& _PANEL_DOCK_STATE[panel].slot.dock == translate_dock_node_name_to_position_name(dock_name) \
+					&& _PANEL_DOCK_STATE[panel].slot.has("position"):
+				_PANEL_DOCK_STATE[panel].slot.position = as_node.get_index()
+		print("-------------------------------")
+		print("----------- Left")
+		for panel in MAIN_UI["left_dock"].get_children():
+			print("Name: ", panel.name, ", Index: ", panel.get_index())
+		print("----------- Right")
+		for panel in MAIN_UI["right_dock"].get_children():
+			print("Name: ", panel.name, ", Index: ", panel.get_index())
+		pass
+		
+	func highlight_dock_slot(global_mouse_position) -> void:
 		var viewport_size = Main.get_viewport_rect().size
-		# right dock
-		if mouse_position.x > viewport_size.x - Settings.DOCK_THRESHOLD:
+		# show right dock highlight
+		if global_mouse_position.x > viewport_size.x - Settings.DOCK_THRESHOLD:
 			if MAIN_UI["right_dock"].visible == false:
 				MAIN_UI["right_dock"].visible = true
 			MAIN_UI["right_dock_highlight"].visible = true
+			# move highlight to appropiate position
+			MAIN_UI["right_dock"].move_child(MAIN_UI["right_dock_highlight"], get_dock_index_from_position("right_dock", global_mouse_position))
 		else:
 			if not is_dock_occupied("right"):
 				MAIN_UI["right_dock"].visible = false
 			MAIN_UI["right_dock_highlight"].visible = false
-		# left dock
-		if mouse_position.x < 0 + Settings.DOCK_THRESHOLD:
+		# show left dock highlight
+		if global_mouse_position.x < 0 + Settings.DOCK_THRESHOLD:
 			if MAIN_UI["left_dock"].visible == false:
 				MAIN_UI["left_dock"].visible = true
 			MAIN_UI["left_dock_highlight"].visible = true
+			# move highlight to appropiate position
+			MAIN_UI["left_dock"].move_child(MAIN_UI["left_dock_highlight"], get_dock_index_from_position("left_dock", global_mouse_position))
 		else:
 			if not is_dock_occupied("left"):
 				MAIN_UI["left_dock"].visible = false
@@ -164,6 +197,36 @@ class UiManager :
 					&& _PANEL_DOCK_STATE[panel].slot.dock == dock && is_panel_open(panel):
 				return true
 		return false
+		
+	func get_dock_panel_count(dock:String) -> int:
+		var count = 0
+		for panel in _PANEL_DOCK_STATE:
+			# If panel is docked and panel dock is requested dock
+			if _PANEL_DOCK_STATE[panel].has("mode") && _PANEL_DOCK_STATE[panel].mode == "docked" \
+					&& _PANEL_DOCK_STATE[panel].has("slot") && _PANEL_DOCK_STATE[panel].slot.has("dock") \
+					&& _PANEL_DOCK_STATE[panel].slot.dock == dock:
+				count += 1
+		return count
+		
+	func get_dock_index_from_position(dock_name:String, global_mouse_position) -> int:
+		var mouse_y = MAIN_UI[dock_name].make_canvas_position_local(global_mouse_position).y
+		var dock_max_y = MAIN_UI[dock_name].size.y
+		var dock_panel_count = get_dock_panel_count(translate_dock_node_name_to_position_name(dock_name)) + 1 # Add 1 to account for highlight
+		var dock_section_height = dock_max_y / dock_panel_count
+		for dock_section in dock_panel_count:
+			if mouse_y > dock_section_height * dock_section && mouse_y < dock_section_height * (dock_section + 1):
+				return dock_section
+		printerr("Dock index calculation failed")
+		return -1
+		
+	# TODO Maybe make obsolete by using same string for both dock node name and position name?
+	# TODO Would like to avoid storing position as "right_dock" though, and would like to avoid using only "right" as node name...
+	func translate_dock_node_name_to_position_name(dock_name:String) -> String:
+		if dock_name == "right_dock":
+			return "right"
+		elif dock_name == "left_dock":
+			return "left"
+		return ""
 		
 	func update_dock_visibility() -> void:
 		if is_dock_occupied("left"):
@@ -191,12 +254,12 @@ class UiManager :
 			if  not _PANEL_DOCK_STATE.has(panel) || (_PANEL_DOCK_STATE[panel].has("mode") && _PANEL_DOCK_STATE[panel].mode != "docked"):
 				as_node.set_meta("size", as_node.get_size() / viewport_size)
 				as_node.set_meta("position", as_node.get_global_position() / viewport_size)
-			as_node.call_deferred("dock_panel", true, slot)
+			as_node.dock_panel(true, slot)
 			_PANEL_DOCK_STATE[panel] = {"mode": "docked", "slot": slot}
 			update_dock_visibility()
 		else:
 			print("undock", randi())
-			as_node.call_deferred("dock_panel", false)
+			as_node.dock_panel(false)
 			_PANEL_DOCK_STATE[panel] = {"mode": "floating"}
 			# Get panel size/position from metadata to restore to previous settings
 			if as_node.has_meta("size"):
@@ -213,7 +276,7 @@ class UiManager :
 			BLOCKING_OVERLAY.set_deferred("visible", visibility)
 			# or needs any other treatments
 		match panel:
-			"preferences": 
+			"preferences":
 				PANELS.preferences.call_deferred("refresh_fields_view", Main.Configs.CONFIRMED)
 			"inspector":
 				MAIN_UI.inspector_view_toggle.set_deferred("button_pressed", visibility)

@@ -164,13 +164,20 @@ func dock_panel(dock: bool, slot=null) -> void:
 		# Reparent to Editor
 		self.get_parent().remove_child(self)
 		if slot != null && slot is Dictionary && slot.has("dock") && slot.dock is String:
+			draggable.disable_top_layer()
 			if slot.dock == "left":
-				LeftDock.add_child(self)
+				if slot.has("position") && slot.position is int:
+					Main.UI.insert_panel_at_index("left_dock", self, slot.position)
+				else:
+					Main.UI.insert_panel_at_index("left_dock", self)
 			elif slot.dock == "right":
-				RightDock.add_child(self)
+				if slot.has("position") && slot.position is int:
+					Main.UI.insert_panel_at_index("right_dock", self, slot.position)
+				else:
+					Main.UI.insert_panel_at_index("right_dock", self)
 			else:
 				printerr("Invalid docking slot")
-				RightDock.add_child(self)
+				Main.UI.insert_panel_at_index("right_dock", self)
 			draggable.update_parent()
 			# Disable resizing & dragging
 			#draggable.disable()
@@ -181,6 +188,7 @@ func dock_panel(dock: bool, slot=null) -> void:
 		else:
 			printerr("No docking slot specified")
 	else:
+		draggable.enable_top_layer()
 		# Remember global position
 		var global_pos = self.global_position
 		# Reparent to FloatingTools
