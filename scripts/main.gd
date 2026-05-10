@@ -139,13 +139,20 @@ func store_window_state() -> void:
 func store_panels_state() -> void:
 	var panels_state = UI.read_panels_state()
 	Configs.TEMPORARY.panels = panels_state
-	# TODO store SplitContainer docking size
 	Configs.save_configurations_and_confirm(Configs.TEMPORARY, null, false)
 	print_debug("panel state saved: ", Configs.CONFIRMED.panels)
 	pass
 
+func store_docks_state() -> void:
+	var docks_state = UI.read_docks_state()
+	Configs.TEMPORARY.docks = docks_state
+	Configs.save_configurations_and_confirm(Configs.TEMPORARY, null, false)
+	print_debug("docks state saved: ", Configs.CONFIRMED.docks)
+	pass
+
 func safe_quit_app() -> void:
 	store_panels_state()
+	store_docks_state()
 	store_window_state()
 	await TheTree.process_frame
 	Mind.close_project(false, true)

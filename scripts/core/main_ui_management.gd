@@ -27,8 +27,8 @@ const MAIN_UI_PATHS = {
 	"right_dock": "/root/Main/Editor/Center/RightDock",
 	"left_dock_highlight": "/root/Main/Editor/Center/LeftDock/Highlight",
 	"right_dock_highlight": "/root/Main/Editor/Center/RightDock/Highlight",
+	"center": "/root/Main/Editor/Center",
 }
-
 const THEME_ADJUSTMENT_LAYERS = [
 	"/root/Main",
 	"/root/Main/Overlays/Control",
@@ -67,6 +67,7 @@ class UiManager :
 		TheViewport.size_changed.connect(self._on_screen_resized)
 		MAIN_UI.inspector_view_toggle.toggled.connect(self._on_inspector_view_toggle, CONNECT_DEFERRED)
 		MAIN_UI.quick_preferences.quick_preference.connect(self._on_quick_preference, CONNECT_DEFERRED)
+		MAIN_UI.center.drag_ended.connect(self._on_center_docks_drag_ended, CONNECT_DEFERRED)
 		PANELS.preferences.preference_modifications_done.connect(Main.Configs._on_preference_modifications_done, CONNECT_DEFERRED)
 		PANELS.preferences.preference_modified.connect(Main.Configs._on_preference_modified, CONNECT_DEFERRED)
 		pass
@@ -138,13 +139,6 @@ class UiManager :
 		MAIN_UI[dock_name].add_child(panel_node)
 		MAIN_UI[dock_name].move_child(panel_node, index)
 		MAIN_UI[dock_name].queue_sort()
-		print("-------------------------------------------------------------")
-		print("----------- Left")
-		for panel in MAIN_UI["left_dock"].get_children():
-			print("Name: ", panel.name, ", Index: ", panel.get_index())
-		print("----------- Right")
-		for panel in MAIN_UI["right_dock"].get_children():
-			print("Name: ", panel.name, ", Index: ", panel.get_index())
 		# Update index of all other panels (not this one since it's being stored in set_panel_dock_state() anyway)
 		for panel in _PANEL_DOCK_STATE:
 			var as_node = PANELS[panel]
@@ -154,13 +148,6 @@ class UiManager :
 					&& _PANEL_DOCK_STATE[panel].slot.dock == translate_dock_node_name_to_position_name(dock_name) \
 					&& _PANEL_DOCK_STATE[panel].slot.has("position"):
 				_PANEL_DOCK_STATE[panel].slot.position = as_node.get_index()
-		print("-------------------------------")
-		print("----------- Left")
-		for panel in MAIN_UI["left_dock"].get_children():
-			print("Name: ", panel.name, ", Index: ", panel.get_index())
-		print("----------- Right")
-		for panel in MAIN_UI["right_dock"].get_children():
-			print("Name: ", panel.name, ", Index: ", panel.get_index())
 		pass
 		
 	func highlight_dock_slot(global_mouse_position) -> void:
@@ -216,6 +203,10 @@ class UiManager :
 		for dock_section in dock_panel_count:
 			if mouse_y > dock_section_height * dock_section && mouse_y < dock_section_height * (dock_section + 1):
 				return dock_section
+		if mouse_y <= 0:
+			return 0
+		if mouse_y >= dock_max_y:
+			return -1
 		printerr("Dock index calculation failed")
 		return -1
 		
@@ -237,6 +228,18 @@ class UiManager :
 			MAIN_UI["right_dock"].visible = true
 		else:
 			MAIN_UI["right_dock"].visible = false
+			
+		# Await for frame to be processed to make sure split_offsets[1] exists if both panels have been shown
+		await TheTree.process_frame
+		# Restore panel size
+		if MAIN_UI["left_dock"].visible == true && MAIN_UI["center"].has_meta("left_offset") && MAIN_UI["center"].get_meta("left_offset") != 0 \
+				&& MAIN_UI["right_dock"].visible == true && MAIN_UI["center"].has_meta("right_offset") && MAIN_UI["center"].get_meta("right_offset") != 0:
+			MAIN_UI["center"].split_offsets[0] = MAIN_UI["center"].get_meta("left_offset")
+			MAIN_UI["center"].split_offsets[1] = MAIN_UI["center"].get_meta("right_offset")
+		elif MAIN_UI["left_dock"].visible == true && MAIN_UI["center"].has_meta("left_offset") && MAIN_UI["center"].get_meta("left_offset") != 0:
+			MAIN_UI["center"].split_offsets[0] = MAIN_UI["center"].get_meta("left_offset")
+		elif MAIN_UI["right_dock"].visible == true && MAIN_UI["center"].has_meta("right_offset") && MAIN_UI["center"].get_meta("right_offset") != 0:
+			MAIN_UI["center"].split_offsets[0] = MAIN_UI["center"].get_meta("right_offset")
 		pass
 	
 	func get_panel_name(panel_node) -> String:
@@ -245,11 +248,54 @@ class UiManager :
 				return panel_name
 		return ""
 		
+	func _on_center_docks_drag_ended() -> void:
+		if is_dock_occupied("left") && is_dock_occupied("right"):
+			MAIN_UI["center"].set_meta("left_offset", MAIN_UI["center"].split_offsets[0])
+			MAIN_UI["center"].set_meta("right_offset", MAIN_UI["center"].split_offsets[1])
+		elif is_dock_occupied("left"):
+			MAIN_UI["center"].set_meta("left_offset", MAIN_UI["center"].split_offsets[0])
+		elif is_dock_occupied("right"):
+			MAIN_UI["center"].set_meta("right_offset", MAIN_UI["center"].split_offsets[0])
+		pass
+	
+	func read_docks_state() -> Dictionary:
+		# TODO implement saving vertical panel size of left and right dock
+		var left_dock_size = 0
+		var right_dock_size = 0
+		# Read split offsets directly from HSplitContainer if possible, from metadata if not
+		if is_dock_occupied("left") && is_dock_occupied("right"):
+			left_dock_size = MAIN_UI["center"].split_offsets[0]
+			right_dock_size = MAIN_UI["center"].split_offsets[1]
+		elif is_dock_occupied("left"):
+			left_dock_size = MAIN_UI["center"].split_offsets[0]
+			right_dock_size = MAIN_UI["center"].get_meta("right_offset")
+		elif is_dock_occupied("right"):
+			left_dock_size = MAIN_UI["center"].get_meta("left_offset")
+			right_dock_size = MAIN_UI["center"].split_offsets[0]
+		else:
+			left_dock_size = MAIN_UI["center"].get_meta("left_offset")
+			right_dock_size = MAIN_UI["center"].get_meta("right_offset")
+		return {"left": left_dock_size, "right": right_dock_size}
+	
+	func restore_docks_state(config = null) -> void:
+		# TODO implement restoring vertical panel size of left and right dock
+		# Write data into metadata, since docks won't be open at this point and writing into split_offsets[] will not work
+		# Actually restoring panel size happens in update_dock_visibility()
+		# If value not in config file set to default width
+		if config.has("left") && config.left != 0:
+			MAIN_UI["center"].set_meta("left_offset", config.left)
+		else:
+			MAIN_UI["center"].set_meta("left_offset", Settings.DEFAULT_PANEL_WIDTH)
+		if config.has("right") && config.right != 0:
+			MAIN_UI["center"].set_meta("right_offset", config.right)
+		else:
+			MAIN_UI["center"].set_meta("right_offset", Settings.DEFAULT_PANEL_WIDTH)
+		pass
+	
 	func set_panel_dock_state(panel:String, docked:bool, slot=null, update_position:bool=true) -> void:
 		var viewport_size = Main.get_viewport_rect().size
 		var as_node = PANELS[panel]
 		if docked && slot != null && slot is Dictionary && slot.has("dock") && slot.dock is String:
-			print("dock", randi())
 			# If panel wasn't docked, get panel size/position and store in metadata
 			if  not _PANEL_DOCK_STATE.has(panel) || (_PANEL_DOCK_STATE[panel].has("mode") && _PANEL_DOCK_STATE[panel].mode != "docked"):
 				as_node.set_meta("size", as_node.get_size() / viewport_size)
@@ -258,7 +304,6 @@ class UiManager :
 			_PANEL_DOCK_STATE[panel] = {"mode": "docked", "slot": slot}
 			update_dock_visibility()
 		else:
-			print("undock", randi())
 			as_node.dock_panel(false)
 			_PANEL_DOCK_STATE[panel] = {"mode": "floating"}
 			# Get panel size/position from metadata to restore to previous settings
@@ -464,4 +509,7 @@ class UiManager :
 				"panels":
 					if cfg is Dictionary:
 						restore_panels_state(cfg)
+				"docks":
+					if cfg is Dictionary:
+						restore_docks_state(cfg)
 		pass

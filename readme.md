@@ -32,6 +32,7 @@ Improvements over original program:
 + Scenes now have a color and thumbnail image
 + Scene Node which plays a whole scene
 + Exit node to return to previous scene or properly end project
++ Docking of panels by dragging them to screen edges
 
 Arrow supports a rich palette of features, from scenes and macros, to variables and characters.
 It also comes with built-in common node types, providing logic, interactive navigation, random data generation,

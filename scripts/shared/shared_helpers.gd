@@ -617,7 +617,6 @@ class Draggable:
 			return
 		if event is InputEventMouseButton:
 			if event.is_pressed(): # Mouse pressed
-				print("drag_started")
 				_DRAGGING = true
 				_DRAG_OFFSET = _VIEWPORT.get_mouse_position() - _DRAGGABLE.global_position # Remember distance from ouse pointer to panel corner
 				if _COMPETE_FOR_PARENT_TOP_VIEW:
@@ -630,7 +629,6 @@ class Draggable:
 		if not _DRAGGING || not _ENABLED:
 			return
 		if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT): # TODO use more elegant input checking method?
-			print("drag_ended")
 			_DRAGGING = false
 			if on_drag_ended.is_valid():
 				on_drag_ended.call(_DRAGGABLE) # TODO determine if call_deferred would be better

@@ -40,7 +40,7 @@ func _gui_input(event) -> void:
 					if data.has("scene") && (data.scene is int) && data.scene >= 0:
 						var the_scene = Main.Mind.lookup_resource(data.scene, "scenes")
 						if the_scene.has("entry"):
-							Main.Mind.call_deferred("locate_node_on_grid", the_scene.entry) # TODO fix bug where program crasheswhen persuing this chain of events, crash happens in function resize_to_best_fit()
+							Main.Mind.call_deferred("locate_node_on_grid", the_scene.entry) # TODO fix bug where program crashes when persuing this chain of events, crash happens in function resize_to_best_fit()
 	pass
 
 func _update_node(data:Dictionary) -> void:

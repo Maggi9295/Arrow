@@ -33,6 +33,7 @@ class ConfigHandler :
 		"app_local_dir_path": "user://", # (IMPORTANT: Only `user://` works in `HTML5` exports)
 		"window": null,
 		"panels": null,
+		"docks": null,
 		"history_size": 0,
 	}
 	# active configurations

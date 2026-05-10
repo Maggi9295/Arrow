@@ -159,8 +159,6 @@ func _on_button_pressed(toggled_on: bool) -> void:
 func dock_panel(dock: bool, slot=null) -> void:
 	# Remember global position
 	if dock:
-		# TODO implement slots
-		# TODO remove thumbtack button?
 		# Reparent to Editor
 		self.get_parent().remove_child(self)
 		if slot != null && slot is Dictionary && slot.has("dock") && slot.dock is String:
