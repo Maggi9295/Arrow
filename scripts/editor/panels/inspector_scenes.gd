@@ -390,14 +390,14 @@ func submit_scene_modification() -> void:
 		var ThumbnailByteArray = ThumbnailImage.save_png_to_buffer()
 		var ThumbnailBase64 = Marshalls.raw_to_base64(ThumbnailByteArray)
 		var mod_thumbnail = ThumbnailBase64
-		if mod_thumbnail != the_scene_original.thumbnail: # thumbnail is changed
+		if (not the_scene_original.has("thumbnail")) || (the_scene_original.has("thumbnail") && mod_thumbnail != the_scene_original.thumbnail): # thumbnail is changed
 			resource_updater.modification["thumbnail"] = mod_thumbnail
 	if mod_name.length() > 0 && mod_name != the_scene_original.name: # name is changed
 		# force using unique names for variables ?
 		while Settings.FORCE_UNIQUE_NAMES_FOR_SCENES_AND_MACROS && Main.Mind.is_resource_name_duplicate(mod_name, "scenes"):
 			mod_name = ( mod_name + Settings.REUSED_SCENE_OR_MACRO_NAMES_AUTO_POSTFIX )
 		resource_updater.modification["name"] = mod_name
-	if mod_color != the_scene_original.color: # emphasis-color value is changed
+	if (not the_scene_original.has("color")) || (the_scene_original.has("color") && mod_color != the_scene_original.color): # emphasis-color value is changed
 		resource_updater.modification["color"] = mod_color
 	if resource_updater.modification.size() > 0 :
 		self.relay_request_mind.emit("update_resource", resource_updater)

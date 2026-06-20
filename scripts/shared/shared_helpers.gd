@@ -640,7 +640,7 @@ class Draggable:
 		new_draggable_position = Vector2d.limit_vector2(new_draggable_position, the_viewport_size, true, LIMIT_PADDING)
 		_DRAGGABLE.set_global_position(new_draggable_position)
 		if on_drag_moved.is_valid():
-			on_drag_moved.call(_DRAGGABLE)
+			on_drag_moved.call(_DRAGGABLE) # TODO determine if call_deferred would be better
 		pass
 	
 	func steal_top() -> void:

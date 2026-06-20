@@ -104,7 +104,7 @@ class UiManager :
 				panel_node.call_deferred("_set_size", panel_node.get_meta("size") * viewport_size)
 		pass
 		
-	func _on_panel_dragged(panel_node) -> void:
+	func _on_panel_dragged(_panel_node) -> void:
 		var mouse = Main.get_global_mouse_position()
 		highlight_dock_slot(mouse)
 		pass
@@ -133,6 +133,13 @@ class UiManager :
 			MAIN_UI["right_dock"].visible = false
 		if not is_dock_occupied("left"):
 			MAIN_UI["left_dock"].visible = false
+		pass
+	
+	func recalculate_dock_panel_split(dock_name:String) -> void:
+		var panel_count = get_dock_panel_count(translate_dock_node_name_to_position_name(dock_name), true)
+		var panel_height = (1.0 / panel_count) * MAIN_UI[dock_name].size.y
+		for index in (panel_count - 1):
+			MAIN_UI[dock_name].split_offsets[index] = panel_height * (index + 1)
 		pass
 		
 	func insert_panel_at_index(dock_name:String, panel_node, index:int = -1) -> void:
@@ -185,13 +192,13 @@ class UiManager :
 				return true
 		return false
 		
-	func get_dock_panel_count(dock:String) -> int:
+	func get_dock_panel_count(dock:String, open_only:bool=false) -> int:
 		var count = 0
 		for panel in _PANEL_DOCK_STATE:
 			# If panel is docked and panel dock is requested dock
 			if _PANEL_DOCK_STATE[panel].has("mode") && _PANEL_DOCK_STATE[panel].mode == "docked" \
 					&& _PANEL_DOCK_STATE[panel].has("slot") && _PANEL_DOCK_STATE[panel].slot.has("dock") \
-					&& _PANEL_DOCK_STATE[panel].slot.dock == dock:
+					&& _PANEL_DOCK_STATE[panel].slot.dock == dock && (is_panel_open(panel) if open_only else true):
 				count += 1
 		return count
 		
@@ -211,7 +218,7 @@ class UiManager :
 		return -1
 		
 	# TODO Maybe make obsolete by using same string for both dock node name and position name?
-	# TODO Would like to avoid storing position as "right_dock" though, and would like to avoid using only "right" as node name...
+	# I'd like to avoid storing position as "right_dock" though, and I'd like to avoid using only "right" as dock node name...
 	func translate_dock_node_name_to_position_name(dock_name:String) -> String:
 		if dock_name == "right_dock":
 			return "right"
@@ -240,6 +247,11 @@ class UiManager :
 			MAIN_UI["center"].split_offsets[0] = MAIN_UI["center"].get_meta("left_offset")
 		elif MAIN_UI["right_dock"].visible == true && MAIN_UI["center"].has_meta("right_offset") && MAIN_UI["center"].get_meta("right_offset") != 0:
 			MAIN_UI["center"].split_offsets[0] = MAIN_UI["center"].get_meta("right_offset")
+		# Resize panels in dock
+		if MAIN_UI["left_dock"].visible == true:
+			recalculate_dock_panel_split("left_dock")
+		if MAIN_UI["right_dock"].visible == true:
+			recalculate_dock_panel_split("right_dock")
 		pass
 	
 	func get_panel_name(panel_node) -> String:
@@ -259,7 +271,7 @@ class UiManager :
 		pass
 	
 	func read_docks_state() -> Dictionary:
-		# TODO implement saving vertical panel size of left and right dock
+		# TODO implement saving vertical panel sizes of left and right dock (kinda redundant for now since only two panels exist)
 		var left_dock_size = 0
 		var right_dock_size = 0
 		# Read split offsets directly from HSplitContainer if possible, from metadata if not
@@ -278,7 +290,7 @@ class UiManager :
 		return {"left": left_dock_size, "right": right_dock_size}
 	
 	func restore_docks_state(config = null) -> void:
-		# TODO implement restoring vertical panel size of left and right dock
+		# TODO implement restoring vertical panel sizes of left and right dock (kinda redundant for now since only two panels exist)
 		# Write data into metadata, since docks won't be open at this point and writing into split_offsets[] will not work
 		# Actually restoring panel size happens in update_dock_visibility()
 		# If value not in config file set to default width
@@ -301,7 +313,7 @@ class UiManager :
 				as_node.set_meta("size", as_node.get_size() / viewport_size)
 				as_node.set_meta("position", as_node.get_global_position() / viewport_size)
 			as_node.dock_panel(true, slot)
-			_PANEL_DOCK_STATE[panel] = {"mode": "docked", "slot": slot}
+			_PANEL_DOCK_STATE[panel] = {"mode": "docked", "slot": slot.duplicate()}
 			update_dock_visibility()
 		else:
 			as_node.dock_panel(false)
